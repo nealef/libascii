@@ -1,44 +1,43 @@
-/********************************************************************/
-/*																	*/
-/* Name		: 	init_a.c 											*/	
-/*                                                                  */
-/* Copyright:   Licensed Materials - Property of IBM.               */
-/*              (C) Copyright IBM Corp. 1997, 1998.                 */
-/*              All rights reserved.                                */
-/* 																	*/
-/* Function :	Miscallaneous routines required by ASCII/EBCDIC		*/
-/*				interface code. All these routines are internal		*/
-/*				use only and thus the functions are not exported.	*/	
-/*																	*/
-/* Compile	:	None												*/
-/* Options															*/
-/*																	*/
-/* Notes  	:	None												*/
-/*																	*/ 
-/********************************************************************/
+/**
+ * @file init_a.c
+ * @brief Initialization and support routines
+ * 
+ * Miscallaneous routines required by ASCII/EBCDIC
+ * interface code. All these routines are internal
+ * use only and thus the functions are not exported.
+ *
+ */
+
+/********************************************************************
+ * Copyright:   Licensed Materials - Property of IBM.               *
+ *              (C) Copyright IBM Corp. 1997.                       *
+ *              All rights reserved.                                *
+ ********************************************************************/
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <limits.h>
 #include <errno.h>
 #include "global_a.h"
 
-char version[20]="libascii V1.1.9";
+char version[20]="libascii V2.0.0";
 pthread_key_t *keyptr = (pthread_key_t *) NULL;
 pthread_key_t key;
 char athdid[5] = "ATHD";
 
+/**
+ * Prototypes
+ */
 ATHD_t *  __initASCIIlib_a();
 void __termASCIIlib_a(void *);
 
 /*%PAGE																*/
-/*********************************************************************
-*
-*	Name   	 :	getathdp
-*	Function :	Returns pointer to current thread's ATHD thread
-*				structure.
-*
-*********************************************************************/
-struct ATHD *getathdp()
+/**
+ * @brief Returns pointer to current thread's ATHD thread
+ *
+ */
+struct ATHD *
+getathdp()
 {
 	int status;
 	ATHD_t *athdptr;
@@ -55,12 +54,10 @@ struct ATHD *getathdp()
 }
 
 /*%PAGE																*/
-/*********************************************************************
-*
-*	Name   	 :	__initASCIIlib_a
-*	Function :	Main initialization for all ASCII library routines,
-*
-*********************************************************************/
+/**
+ * @brief Main initialization for all ASCII library routines
+ *
+ */
 ATHD_t * __initASCIIlib_a()
 {
 	ATHD_t *athdptr;
@@ -103,13 +100,13 @@ ATHD_t * __initASCIIlib_a()
 
 	return(athdptr);
 }
-/*********************************************************************
-*
-*	Name   	 :	__termASCIIlib_a
-*	Function :	Thread termination routine for ASCII library.
-*
-*********************************************************************/
-void __termASCIIlib_a(void *inparm)
+
+/**
+ * @brief Thread termination routine for ASCII library.
+ *
+ */
+void 
+__termASCIIlib_a(void *inparm)
 {
 	ATHD_t *athdptr;
 	/*
@@ -131,14 +128,12 @@ void __termASCIIlib_a(void *inparm)
 }
  
 /*%PAGE																*/
-/*********************************************************************
-*
-*	Name   	 :	__panic_a
-*	Function :	Routine called when unusual condition encountered  
-*				for which there is no recovery.
-*
-*********************************************************************/
-void __panic_a(char *reason)
+/**
+ * @brief Routine called when unusual condition encountered  for which there is no recovery.
+ *
+ */
+void 
+__panic_a(char *reason)
 {
 	int	S_errno = errno;
 	int	S_errno2 = __errno2();

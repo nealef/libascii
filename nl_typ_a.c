@@ -1,25 +1,24 @@
-/********************************************************************/
-/*																	*/
-/* Name		: 	nl_typ_a.c  											*/	
-/*                                                                  */
-/* Copyright:   Licensed Materials - Property of IBM.               */
-/*              (C) Copyright IBM Corp. 1997, 1998 .                */
-/*              All rights reserved.                                */
-/* 																	*/
-/* Function :	Contains ASCII-to-EBCDIC front end to the			*/
-/*			  	nl_types functions (catopen and catgets).  			*/
-/* 																	*/
-/* Compile	:	GEN_PRAGMA_EXPORT - generate PRAGMA statements to	*/
-/* Options						export these entry points from the	*/
-/*								DLL									*/
-/*																	*/
-/* Notes	:	All the procedures are name "__xxxxxxxx_a" where	*/
-/*				xxxxxxxx is the name of the standard C run-time		*/
-/*				function name. Unless otherwise noted, all functions*/
-/* 				take the same argument,produce the same output and	*/
-/*				return the same values as the standard functions.	*/
-/*																	*/
-/********************************************************************/
+/**
+ * @file nl_typ_a.c
+ * @brief Contains ASCII-to-EBCDIC front end to the nl_types functions (catopen and catgets).
+ * 
+ * Compile	:	GEN_PRAGMA_EXPORT - generate PRAGMA statements to
+ * Options						export these entry points from the
+ *								DLL								
+ *															
+ * Notes	:	All the procedures are name "__xxxxxxxx_a" where
+ *				xxxxxxxx is the name of the standard C run-time
+ *				function name. Unless otherwise noted, all functions
+ * 				take the same argument,produce the same output and
+ *				return the same values as the standard functions.
+ */
+
+/********************************************************************
+ * Copyright:   Licensed Materials - Property of IBM.               *
+ *              (C) Copyright IBM Corp. 1997.                       *
+ *              All rights reserved.                                *
+ ********************************************************************/
+
  
 #include <nl_types.h>
 #include "global_a.h"
@@ -36,12 +35,17 @@
 /*																	*/
 /********************************************************************/
 
-nl_catd __catopen_a(const char *path, int oflags)
+/**
+ * @brief 
+ */
+nl_catd 
+__catopen_a(const char *path, int oflags)
 {
 	return catopen((const char *) __getEstring1_a(path) , oflags);
 }
 
-char *__catgets_a(nl_catd catd, int set_id, int msg_id, const char *string)
+char *
+__catgets_a(nl_catd catd, int set_id, int msg_id, const char *string)
 {
 
 	char *msgP;

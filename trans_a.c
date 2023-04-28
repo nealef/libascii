@@ -1,33 +1,37 @@
-/********************************************************************/
-/*																	*/
-/* Name		: 	trans_a.c 											*/	
-/*                                                                  */
-/* Copyright:   Licensed Materials - Property of IBM.               */
-/*              (C) Copyright IBM Corp. 1997.                       */
-/*              All rights reserved.                                */
-/* 																	*/
-/* Function :	Contains the followin ASCII-EBCDIC translation		*/
-/*			  	functions: 											*/
-/*					- __argvtoascii_a								*/
-/*					- __argvtoebcdic_a								*/
-/*					- __getAstring1_a								*/
-/*					- __getAstring2_a								*/
-/*					- __getEstring1_a								*/
-/*					- __getEstring2_a								*/
-/*					- __getEstring3_a								*/
-/*					- __getEstring4_a								*/
-/*					- __toascii_a									*/
-/*					- __toebcdic_a									*/
-/*																	*/
-/* Compile	:	GEN_PRAGMA_EXPORT - generate PRAGMA statements to	*/
-/* Options						export these entry points from the	*/
-/*								DLL									*/
-/*				GEN_FOR_NOTES	- generates code assuming that this	*/
-/*								will be running in NOTES			*/
-/*								environment (within LIBNOTES)		*/
-/*																	*/
-/********************************************************************/
+/**
+ * @file trans_a.c
+ * @brief Various translation utility functions
+ * 
+ * Provides the following services:
+ *	- __argvtoascii_a
+ *	- __argvtoebcdic_a
+ *	- __getAstring1_a
+ *	- __getAstring2_a
+ *	- __getEstring1_a
+ *	- __getEstring2_a
+ *	- __getEstring3_a
+ *	- __getEstring4_a
+ *	- __toascii_a
+ *	- __toebcdic_a
+ *
+ * Compile	:	GEN_PRAGMA_EXPORT - generate PRAGMA statements to
+ * Options						export these entry points from the
+ *								DLL								
+ *															
+ * Notes	:	All the procedures are name "__xxxxxxxx_a" where
+ *				xxxxxxxx is the name of the standard C run-time
+ *				function name. Unless otherwise noted, all functions
+ * 				take the same argument,produce the same output and
+ *				return the same values as the standard functions.
+ */
 
+/********************************************************************
+ * Copyright:   Licensed Materials - Property of IBM.               *
+ *              (C) Copyright IBM Corp. 1997.                       *
+ *              All rights reserved.                                *
+ ********************************************************************/
+
+#include <stdio.h>
 #include <stdlib.h>
 #include <iconv.h>
 #include "global_a.h"
@@ -46,31 +50,24 @@
 #pragma export(__toebcdic_a)
 #endif
 
-	/********************************************************************/
-	/*                                                                  */
-	/* ebuffers area to hold buffers pointed to by AHD                  */
-	/*                                                                  */
-	/********************************************************************/
-	struct ebuffers{
-		/* Buffers pointed to by the estringx_a pointers in ATHD          */
-		char   estring1_buffer[MAXSTRING_a+1]; /* Warning this field must
-		                                          be first                */
-		char   estring2_buffer[MAXSTRING_a+1];
-		char   estring3_buffer[MAXSTRING_a+1];                          
-		char   estring4_buffer[MAXSTRING_a+1];
-		} ;
-	 typedef struct ebuffers ebuffers_t;
+/**
+ * @brief area to hold buffers pointed to by AHD
+ */
+struct ebuffers {
+    /* Buffers pointed to by the estringx_a pointers in ATHD          */
+    char   estring1_buffer[MAXSTRING_a+1]; /* Warning this field must
+                                              be first                */
+    char   estring2_buffer[MAXSTRING_a+1];
+    char   estring3_buffer[MAXSTRING_a+1];                          
+    char   estring4_buffer[MAXSTRING_a+1];
+};
+typedef struct ebuffers ebuffers_t;
 
-void BadStr();
-
-/*%PAGE																*/
-/*********************************************************************
-*
-*	Name   	 :	__argvtoascii_a
-*	Function :	Converts EBCDIC argument strings to ASCII
-*
-*********************************************************************/
-int __argvtoascii_a(int argc, char *argv[])
+/**
+ * @brief Converts EBCDIC argument strings to ASCII
+ */
+int 
+__argvtoascii_a(int argc, char *argv[])
 {
 	int i;
 	for (i=0; i < argc ; i++)   
@@ -78,14 +75,11 @@ int __argvtoascii_a(int argc, char *argv[])
 	return 0;
 }
 
-/*%PAGE																*/
-/*********************************************************************
-*
-*	Name   	 :	__argvtoebcdic
-*	Function :	Converts ASCII argument strings to EBCDIC
-*
-*********************************************************************/
-int __argvtoebcdic_a(int argc, char *argv[])
+/**
+ * @brief Converts ASCII argument strings to EBCDIC
+ */
+int 
+__argvtoebcdic_a(int argc, char *argv[])
 {
 	int i;
 	for (i=0; i < argc ; i++)   
@@ -93,18 +87,15 @@ int __argvtoebcdic_a(int argc, char *argv[])
 	return 0;
 }
 
-/*%PAGE																*/
-/*********************************************************************
-*
-*	Name   	 :	__getAstring1_a
-*	Function :	Returns address of an ASCII string copy of the
-*				EBCDIC input string.
-*	Notes    : 	1)May only be called once per ASCII library routine	
-*				because the string is not malloc()ed.
-*				2) Multiple copies allows for limited multiple calls
-*
-*********************************************************************/
-char * __getAstring1_a(const char *einstr1)
+/**
+ * @brief Returns address of an ASCII string copy of the EBCDIC input string.
+ *
+ * Notes:	
+ *   1. May only be called once per ASCII library routine because the string is not malloc()ed.
+ *   2. Multiple copies allows for limited multiple calls
+ */
+char *
+__getAstring1_a(const char *einstr1)
 {
 	ATHD_t *myathdp;
 	myathdp = athdp();
@@ -113,7 +104,15 @@ char * __getAstring1_a(const char *einstr1)
 	return myathdp->estring1_a;
 }
 
-char * __getAstring2_a(const char *einstr2)
+/**
+ * @brief Returns address of an ASCII string copy of the EBCDIC input string.
+ *
+ * Notes:	
+ *   1. May only be called once per ASCII library routine because the string is not malloc()ed.
+ *   2. Multiple copies allows for limited multiple calls
+ */
+char *
+__getAstring2_a(const char *einstr2)
 {
 	ATHD_t *myathdp;
 	myathdp = athdp();
@@ -122,18 +121,15 @@ char * __getAstring2_a(const char *einstr2)
 	return myathdp->estring2_a;
 }
 
-/*%PAGE																*/
-/*********************************************************************
-*
-*	Name   	 :	__getEstring1_a
-*	Function :	Returns address of an EBCDIC string copy of the
-*				ASCII input string.
-*	Notes    : 	1) May only be called once per ASCII library routine	
-*				because the string is not malloc()ed.
-*				2) Multiple copies allows for limited multiple calls
-*
-*********************************************************************/
-char * __getEstring1_a(const char *ainstr1)
+/**
+ * @brief Returns address of an EBCDIC string copy of the ASCII input string.
+ *
+ * Notes:	
+ *   1. May only be called once per ASCII library routine because the string is not malloc()ed.
+ *   2. Multiple copies allows for limited multiple calls
+ */
+char *
+__getEstring1_a(const char *ainstr1)
 {
 	ATHD_t *myathdp;
 	myathdp = athdp();
@@ -142,7 +138,15 @@ char * __getEstring1_a(const char *ainstr1)
 	return myathdp->estring1_a;
 }
 
-char * __getEstring2_a(const char *ainstr2)
+/**
+ * @brief Returns address of an EBCDIC string copy of the ASCII input string.
+ *
+ * Notes:	
+ *   1. May only be called once per ASCII library routine because the string is not malloc()ed.
+ *   2. Multiple copies allows for limited multiple calls
+ */
+char *
+__getEstring2_a(const char *ainstr2)
 {
 	ATHD_t *myathdp;
 	myathdp = athdp();
@@ -151,7 +155,15 @@ char * __getEstring2_a(const char *ainstr2)
 	return myathdp->estring2_a;
 }
 
-char * __getEstring3_a(const char *ainstr3)
+/**
+ * @brief Returns address of an EBCDIC string copy of the ASCII input string.
+ *
+ * Notes:	
+ *   1. May only be called once per ASCII library routine because the string is not malloc()ed.
+ *   2. Multiple copies allows for limited multiple calls
+ */
+char *
+__getEstring3_a(const char *ainstr3)
 {
 	ATHD_t *myathdp;
 	myathdp = athdp();
@@ -160,7 +172,15 @@ char * __getEstring3_a(const char *ainstr3)
 	return myathdp->estring3_a;
 }
 
-char * __getEstring4_a(const char *ainstr4)
+/**
+ * @brief Returns address of an EBCDIC string copy of the ASCII input string.
+ *
+ * Notes:	
+ *   1. May only be called once per ASCII library routine because the string is not malloc()ed.
+ *   2. Multiple copies allows for limited multiple calls
+ */
+char *
+__getEstring4_a(const char *ainstr4)
 {
 	ATHD_t *myathdp;
 	myathdp = athdp();
@@ -169,110 +189,66 @@ char * __getEstring4_a(const char *ainstr4)
 	return myathdp->estring4_a;
 }
 
-/*%PAGE																*/
-/*********************************************************************
-*
-*	Name   	 :	__toascii_a  
-*	Function :	Convert null-terminated EBCDIC (IBM-1047) string to 
-*				ASCII (ISO8859-1).
-*
-*********************************************************************/
-void __toascii_a(char *outasciistr, const char *inebcdicstr)
+/**
+ * @brief Convert null-terminated EBCDIC (IBM-1047) string to ASCII (ISO8859-1).
+ *
+ * @param outasciistr Output ASCII string
+ * @param inebcdicstr Input EBCDIC string
+ */
+void 
+__toascii_a(char *outasciistr, const char *inebcdicstr)
 {
-#ifdef OS390DBG
-	char *evalidchars="bcdefghipqrstuvwxABCDEFGHIQRSTUVWXY";
-	char avalidchars[64];
-#endif /* OS390DBG */
 	size_t rc;
 	size_t in_size, out_size;
 	ATHD_t *myathdp;
 	myathdp = athdp();  /* get pointer to ATHD thread structure */
 	out_size = in_size = strlen(inebcdicstr) + 1; /* plus null byte */
-#ifdef OS390DBG
-	strcpy(avaliichars,evalidchars);
-	__etoa(avalidchars);
-	if (strcspn(inebcdicstr,avalidchars) < (in_size-1))
-		BadStr();
-#endif /* OS390DBG */
 	rc = iconv(myathdp->cd_EtoA,(char **) &inebcdicstr, &in_size, &outasciistr, &out_size);
 	if (rc == (size_t) -1)
 		__panic_a("Error from iconv() in __toascii_a()");
 	return;
 }
 
-/*%PAGE																*/
-/*********************************************************************
-*
-*	Name   	 :	__toebcdic_a 
-*	Function :	Convert null-terminated ASCII (ISO8859-1) string to 
-*			EBDCID (IBM-1047).
-*
-*********************************************************************/
-void __toebcdic_a(char *outebcdicstr, const char *inasciistr)
+/**
+ * @brief Convert null-terminated ASCII (ISO8859-1) string to EBCDIC (IBM-1047)
+ *
+ * @param outebcdicstr Output EBCDIC string
+ * @param inasciistr Input ASCII string
+ */
+void 
+__toebcdic_a(char *outebcdicstr, const char *inasciistr)
 {
-#ifdef OS390DBG
-	char *evalidchars="abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
-	char *asciistr;
-#endif /* OS390DBG */
 	size_t rc;
 	size_t in_size, out_size;
 	ATHD_t *myathdp;
 	myathdp = athdp();  /* get pointer to ATHD thread structure */
 	out_size = in_size = strlen(inasciistr) + 1; /* plus null byte */
-#ifdef OS390DBG
-	if (strcspn(inasciistr,evalidchars) < (in_size-1))
-		BadStr();
-#endif /* OS390DBG */
 	rc = iconv(myathdp->cd_AtoE,(char **) &inasciistr, &in_size, &outebcdicstr, &out_size);
 	if (rc == (size_t) -1)
 		__panic_a("Error from iconv() in __toebcdic_a()");
 	return;
 }
 
-/*%PAGE																*/
-/*********************************************************************
-*
-*	Name   	 :	__toasciilen_a  
-*	Function :	Convert null-terminated EBCDIC (IBM-1047) string to 
-*				ASCII (ISO8859-1) with length
-*
-*********************************************************************/
+/**
+ * @brief Convert null-terminated EBCDIC (IBM-1047) string to ASCII (ISO8859-1) with length.
+ *
+ * @param outasciistr Output ASCII string
+ * @param inebcdicstr Input EBCDIC string
+ * @param insize length of input string
+ */
 void __toasciilen_a(char *outasciistr, const char *inebcdicstr,int insize)
 {
-#ifdef OS390DBG
-	char *evalidchars="bcdefghipqrstuvwxABCDEFGHIQRSTUVWXY";
-	char avalidchars[64];
-#endif /* OS390DBG */
 	size_t rc;
 	size_t in_size, out_size;
 	ATHD_t *myathdp;
 	myathdp = athdp();  /* get pointer to ATHD thread structure */
 	out_size = in_size = insize;
-#ifdef OS390DBG
-	strcpy(avalidchars,evalidchars);
-	__etoa(avalidchars);
-	if (strcspn(inebcdicstr,avalidchars) < (in_size-1))
-		BadStr();
-#endif /* OS390DBG */
 	rc = iconv(myathdp->cd_EtoA,(char **) &inebcdicstr, &in_size, &outasciistr, &out_size);
 	if (rc == (size_t) -1)
 		__panic_a("Error from iconv() in __toascii_a()");
 	return;
 }
 
-/*%PAGE																*/
-/*********************************************************************
-*
-*	Name   	 :	BadStr
-*	Function :	Return if bad input string passed
-*
-*********************************************************************/
-void BadStr()
-{
-	return;
-}
-
-/*%PAGE																*/
 /*********************************************************************
 *
 *	Name   	 :	init_trans_a
@@ -308,17 +284,14 @@ void init_trans_a()
 	return;
 }
 
-/*%PAGE																*/
-/*********************************************************************
-*
-*	Name   	 :	term_trans_a
-*	Function :	Termination routine for the translation ASCII
-*				library routines. This routine runs when the thread
-*				is terminated to clean up resources obtained by the
-*				terminating thread.
-*
-*********************************************************************/
-void term_trans(ATHD_t *athdptr)
+/**
+ * @brief Termination routine for the translation ASCII library routines. 
+ * 
+ * This routine runs when the thread is terminated to clean up resources obtained by the
+ * terminating thread.
+ */
+void 
+term_trans(ATHD_t *athdptr)
 {
 	iconv_t 	lociconv;
 	char 		*locstring;
@@ -329,6 +302,7 @@ void term_trans(ATHD_t *athdptr)
 		athdptr->cd_EtoA = (iconv_t) 0;
 		iconv_close(lociconv); /* close iconv */
 	}
+
 	/* If ..., clear so that we don't do it again					*/
 	if ((lociconv = athdptr->cd_AtoE) != (iconv_t) 0) {
 		athdptr->cd_AtoE = (iconv_t) 0;
@@ -341,4 +315,23 @@ void term_trans(ATHD_t *athdptr)
 		free(loc_ebuffers);
 	}
 	return;
+}
+
+/**
+ * @brief Determine if a file is associated with a terminal or printer device
+ *
+ * @param stream File stream
+ * @returns 0 if not a terminal or printer device, otherwise 1
+ */
+int
+__isTerminal(FILE *stream)
+{
+    fldata_t fl;
+    char fName[1024];
+
+    if (fldata(stream, (char *) &fName, &fl) != 0) 
+        return ((fl.__device == __TERMINAL) || 
+                (fl.__device == __PRINTER));
+    else
+        return (0);
 }

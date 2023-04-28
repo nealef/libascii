@@ -1,6 +1,6 @@
 /**
- * @file utime_a.h
- * @brief Contains ASCII-to-EBCDIC front end for the utime functions.
+ * @file fnmatch_a.c
+ * @brief Contains ASCII-to-EBCDIC front end to the fnmatch functions.
  * 
  * Compile	:	GEN_PRAGMA_EXPORT - generate PRAGMA statements to
  * Options						export these entry points from the
@@ -19,36 +19,21 @@
  *              All rights reserved.                                *
  ********************************************************************/
 
-#include <utime.h>
+#include <fnmatch.h>
 #include "global_a.h"
- 
+
 #ifdef GEN_PRAGMA_EXPORT
-#pragma export(__utime_a)
-#pragma export(__utimes_a)
+#pragma export(__fnmatch_a)
 #endif
- 
-#pragma map(__utime_a, "\174\174A00328")
-#pragma map(__utimes_a, "\174\174A00297")
+#pragma map(__fnmatch_a, "\174\174A00037")
 
 /*%PAGE																*/
 /**
- * ASCII front-end routines for UTIME functions
- */
- 
-/**
- * @brief Set file access and modification times
+ * @brief Match File Name or Path Name
  */
 int 
-__utime_a(const char *path, const struct utimbuf *times)
+__fnmatch_a(const char *pattern, const char *string, int flags)
 {
-	return utime((const char *) __getEstring1_a(path), times);
-}
- 
-/**
- * @brief Set file access and modification times
- */
-int 
-__utimes_a(const char *path, const struct timeval *times)
-{
-	return utimes((const char *) __getEstring1_a(path), times);
+	return fnmatch((const char *) __getEstring1_a(pattern), 
+                   (const char *) __getEstring2_a(string), flags);
 }

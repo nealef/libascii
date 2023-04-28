@@ -16,10 +16,6 @@
 /* Compile	:	GEN_PRAGMA_EXPORT - generate PRAGMA statements to	*/
 /* Options						export these entry points from the	*/
 /*								DLL									*/
-/* 				GEN_IEEE_FP   - compiles assuming all floating		*/
-/* 								point input/output is in IEEE 		*/
-/*								format; otherwise in standard OS390	*/
-/*								floating point format.				*/
 /*																	*/
 /* Notes	:	1) All the procedures are name "__xxxxxxxx_a" where	*/
 /*				xxxxxxxx is the name of the standard C run-time		*/
@@ -38,35 +34,31 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include <errno.h>
-/*#include <global.h> */
-#ifdef GEN_IEEE_FP
-#include <ieee_md.h>
-#endif
 #include "global_a.h"
 
 #ifdef GEN_PRAGMA_EXPORT
-/* #pragma export(__fscanf_a)										*/
+#pragma export(__fscanf_a)
 #pragma export(__scanf_a)
 #pragma export(__sscanf_a)
 #endif
+
+#pragma map(__fscanf_a, "\174\174A00159")
+#pragma map(__scanf_a, "\174\174A00160")
+#pragma map(__sscanf_a, "\174\174A00161")
 
 typedef	int		BOOL;
 #define	FALSE	0
 #define	TRUE	!FALSE
 
-/*********************************************************************
-*
-*	Proto-type statements   
-*
-*********************************************************************/
-int		GetArgs(char * format, va_list parg);
-void	ConvertArgsToAscii(int);
+/**
+ * Proto-type statements   
+ */
+static int	getArgs(char * format, va_list parg);
+static void	convertArgsToAscii(int);
 
-/*********************************************************************
-*
-*	Local variables         
-*
-*********************************************************************/
+/**
+ * Local variables         
+ */
 typedef	struct {
 	void	*argPtr;			/* Arg ptr							*/
 	char	argPrefix;			/* Prefix, h,l, L					*/	
@@ -76,18 +68,18 @@ typedef	struct {
 argInfo	ai[20];
 
 /*%PAGE																*/
-/*********************************************************************
-*
-*	Name   	 :	__fscanf_a  
-*	Function :	ASCII front-end to fscanf 
-*	Notes    :	Assumes - EBCDIC input file (NOTE this restriction)
-*				        - ASCII format string  
-*				ASCII output in any character or string variables.
-*				Although implemented here, the functiopn only accepts
-*						  EBCDIC input so it will not be exported.
-*
-*********************************************************************/
-int __fscanf_a(FILE *stream, const char *format, ...)
+/**
+ * @brief Scan a string read from a stream
+ *
+ * Notes: Assumes 
+ *      - EBCDIC input file (NOTE this restriction)
+ *	    - ASCII format string  
+ *      ASCII output in any character or string variables.
+ *		Although implemented here, the function only accepts
+ *	    EBCDIC input so it will not be exported.
+ */
+int 
+__fscanf_a(FILE *stream, const char *format, ...)
 { 
 	extern	argInfo ai[20]; 
 	va_list	parg;
@@ -108,7 +100,7 @@ int __fscanf_a(FILE *stream, const char *format, ...)
 	/* Collect arg info, call real scan routine and convert any		*/
 	/* data returned as character or string to ASCII				*/
 	va_start(parg,format);
-	argCount = GetArgs(eformatp,parg);
+	argCount = getArgs(eformatp,parg);
 	result = fscanf(stream,eformatp,
 			ai[0].argPtr,ai[1].argPtr,ai[2].argPtr,ai[3].argPtr,
 			ai[4].argPtr,ai[5].argPtr,ai[6].argPtr,ai[7].argPtr,
@@ -116,7 +108,7 @@ int __fscanf_a(FILE *stream, const char *format, ...)
 			ai[12].argPtr,ai[13].argPtr,ai[14].argPtr,ai[15].argPtr,
 			ai[16].argPtr,ai[17].argPtr,ai[19].argPtr,ai[19].argPtr);
 	if (result != EOF && result > 0)
-		ConvertArgsToAscii(argCount);
+		convertArgsToAscii(argCount);
 	va_end(parg);
 
 	/* Free temp buffer if one was obtained							*/
@@ -126,17 +118,16 @@ int __fscanf_a(FILE *stream, const char *format, ...)
 	return(result);
 }
 
-/*%PAGE																*/
-/*********************************************************************
-*
-*	Name   	 :	__scanf_a  
-*	Function :	ASCII front-end to scanf 
-*	Notes    :	Assumes - ASCII  format string
-*				        - EBCDIC input from stdin   
-*				ASCII output in any character or string variables.
-*
-*********************************************************************/
-int __scanf_a(const char *format, ...)
+/**
+ * @brief Scan a string from stdin
+ *
+ * Notes: Assumes 
+ *      - EBCDIC input file (NOTE this restriction)
+ *	    - ASCII format string  
+ *      ASCII output in any character or string variables.
+ */
+int 
+__scanf_a(const char *format, ...)
 {
 	extern	argInfo ai[20]; 
 	va_list	parg;
@@ -157,7 +148,7 @@ int __scanf_a(const char *format, ...)
 	/* Collect arg info, call real scan routine and convert any		*/
 	/* data returned as character or string to ASCII				*/
 	va_start(parg,format);
-	argCount = GetArgs(eformatp,parg);
+	argCount = getArgs(eformatp,parg);
 	result = scanf(eformatp,
 			ai[0].argPtr,ai[1].argPtr,ai[2].argPtr,ai[3].argPtr,
 			ai[4].argPtr,ai[5].argPtr,ai[6].argPtr,ai[7].argPtr,
@@ -165,7 +156,7 @@ int __scanf_a(const char *format, ...)
 			ai[12].argPtr,ai[13].argPtr,ai[14].argPtr,ai[15].argPtr,
 			ai[16].argPtr,ai[17].argPtr,ai[19].argPtr,ai[19].argPtr);
 	if (result != EOF && result > 0)
-		ConvertArgsToAscii(argCount);
+		convertArgsToAscii(argCount);
 	va_end(parg);
 
 	/* Free temp buffer if one was obtained							*/
@@ -175,17 +166,13 @@ int __scanf_a(const char *format, ...)
 	return(result);
 }
 
-/*%PAGE																*/
-/*********************************************************************
-*
-*	Name   	 :	__sscanf_a  
-*	Function :	ASCII front-end to sscanf 
-*	Notes    :	Assumes - ASCII  format string
-*				        - ASCII  buffer
-*				ASCII output in any character or string variables.
-*
-*********************************************************************/
-int __sscanf_a(const char * buffer, const char *format, ...)
+/**
+ * @brief Scan a string in memory
+ *
+ * Assumes ASCII format string and an ASCII buffer
+ */
+int 
+__sscanf_a(const char * buffer, const char *format, ...)
 {
 	extern	argInfo ai[20]; 
 	va_list	parg;
@@ -217,7 +204,7 @@ int __sscanf_a(const char * buffer, const char *format, ...)
 	/* Collect arg info, call real scan routine and convert any		*/
 	/* data returned as character or string to ASCII				*/
 	va_start(parg,format);
-	argCount = GetArgs(eformatp,parg);
+	argCount = getArgs(eformatp,parg);
 	result = sscanf(ebufferp,eformatp,
 			ai[0].argPtr,ai[1].argPtr,ai[2].argPtr,ai[3].argPtr,
 			ai[4].argPtr,ai[5].argPtr,ai[6].argPtr,ai[7].argPtr,
@@ -225,7 +212,7 @@ int __sscanf_a(const char * buffer, const char *format, ...)
 			ai[12].argPtr,ai[13].argPtr,ai[14].argPtr,ai[15].argPtr,
 			ai[16].argPtr,ai[17].argPtr,ai[19].argPtr,ai[19].argPtr);
 	if (result != EOF && result > 0)
-		ConvertArgsToAscii(argCount);
+		convertArgsToAscii(argCount);
 	va_end(parg);
 
 	/* Free temp buffers if obtained								*/
@@ -237,18 +224,15 @@ int __sscanf_a(const char * buffer, const char *format, ...)
 	return(result);
 }
 
-/*%PAGE																*/
-/*********************************************************************
-*
-*	Name   	 :	GetArgs
-*	Function :	Read args and save info in array
-*	Inputs	 :	- Conversion specification buffer (EBCDIC)
-*				- Argument list
-*	Outputs	 :	ai array updated with arg info 
-*	Returns  :	Returns number of arguments in list
-*
-*********************************************************************/
-int GetArgs(char *eformatp,va_list parg)
+/**
+ * @brief Read args and save info in an array
+ *
+ * @param eformatp Conversion specification buffer (EBCDIC)
+ * @param parg Argument list updated with arg info
+ * @returns Number of arguments in list
+ */
+static int 
+getArgs(char *eformatp,va_list parg)
 {
 	extern	argInfo ai[20]; 
  	int			i,argCount,width;
@@ -320,29 +304,20 @@ int GetArgs(char *eformatp,va_list parg)
 	return (argCount);
 }
 
-/*%PAGE																*/
-/*********************************************************************
-*
-*	Name   	 :	ConvertArgsToAscii
-*	Function :	Converts character and string arguments to ASCII
-*	Inputs	 :	Count of args in ai array
-*	Outputs	 :	Character and string args changed to ASCII	
-*	Returns	 :	None
-*
-*********************************************************************/
-void ConvertArgsToAscii(int argCount)
+/**
+ * @brief Converts character and string arguments to ASCII
+ *
+ * @param argCount Count of arguments in ai array
+ * 
+ * Output contains character and string args changed to ASCII
+ */
+static void 
+convertArgsToAscii(int argCount)
 {
 	extern	argInfo ai[20]; 
 	int		i,j;
 	char	*ptrchar;
 	char	tmpchar[2];
-#ifdef GEN_IEEE_FP
-	double	tmpdbl;
-	double	*ptrdbl;
-	double_t tmpIEEEdbl;
-	float	tmpfp;
-	float_t	tmpIEEEfp;
-#endif
 
 	/* Loop thru ai array (saved arg info)							*/
 	for (i=0;i<argCount;i++) {
@@ -363,27 +338,6 @@ void ConvertArgsToAscii(int argCount)
 					*ptrchar++ = tmpchar[0];
 				}
 				break;
-#ifdef GEN_IEEE_FP
-			/* If floating point, convert to ieee format			*/
-			case 'e':
-			case 'E':
-			case 'f':
-			case 'g':
-			case 'G':
-				ptrdbl = (double *) ai[i].argPtr;
-				if (ai[i].argPrefix == 'L'
-					| ai[i].argPrefix == 'l') {
-					memcpy(&tmpdbl,ptrdbl,sizeof(double));
-					ConvertDoubleToIEEE(&tmpdbl,&tmpIEEEdbl);
-					memcpy(ptrdbl,&tmpIEEEdbl,sizeof(double));
-					}
-				else {
-					memcpy(&tmpfp,ptrdbl,sizeof(float));
-					ConvertFloatToIEEE(&tmpfp,&tmpIEEEfp);
-					memcpy(ptrdbl,&tmpIEEEfp,sizeof(float));
-					}
-				break;
-#endif
 			/* For all other types, no conversion required			*/
 			default	:
 				break;

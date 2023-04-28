@@ -1,25 +1,24 @@
-/********************************************************************/
-/*																	*/
-/* Name		: 	locale_a.c											*/	
-/*                                                                  */
-/* Copyright:   Licensed Materials - Property of IBM.               */
-/*              (C) Copyright IBM Corp. 1997.                       */
-/*              All rights reserved.                                */
-/* 																	*/
-/* Function :	Contains ASCII-to-EBCDIC front end to the 			*/
-/*			  	locale functions.    								*/
-/* 																	*/
-/* Compile	:	GEN_PRAGMA_EXPORT - generate PRAGMA statements to	*/
-/* Options						export these entry points from the	*/
-/*								DLL									*/
-/*																	*/
-/* Notes	:	1) All the procedures are name "__xxxxxxxx_a" where	*/
-/*				xxxxxxxx is the name of the standard C run-time		*/
-/*				function name. Unless otherwise noted, all functions*/
-/* 				take the same argument,produce the same output and	*/
-/*				return the same values as the standard functions.	*/
-/*																	*/ 
-/********************************************************************/
+/**
+ * @file locale_a.c
+ * @brief Contains ASCII-to-EBCDIC front end to the locale functions.
+ * 
+ * Compile	:	GEN_PRAGMA_EXPORT - generate PRAGMA statements to
+ * Options						export these entry points from the
+ *								DLL								
+ *															
+ * Notes	:	All the procedures are name "__xxxxxxxx_a" where
+ *				xxxxxxxx is the name of the standard C run-time
+ *				function name. Unless otherwise noted, all functions
+ * 				take the same argument,produce the same output and
+ *				return the same values as the standard functions.
+ */
+
+/********************************************************************
+ * Copyright:   Licensed Materials - Property of IBM.               *
+ *              (C) Copyright IBM Corp. 1997.                       *
+ *              All rights reserved.                                *
+ ********************************************************************/
+
 #include <locale.h>
 #include "global_a.h"
 
@@ -28,11 +27,12 @@
  #pragma export(__setlocale_a)
 #endif
 
-/********************************************************************/
-/*                                                                  */
-/* Area to hold copy of lconv - used by localeconv                  */
-/*                                                                  */
-/********************************************************************/
+#pragma map(__localeconv_a, "\174\174A00075")
+#pragma map(__setlocale_a, "\174\174A00151")
+
+/**
+ * Area to hold copy of lconv - used by localeconv
+ */
 struct elconv {
 
     /*                                                              */
@@ -60,13 +60,11 @@ struct elconv {
  typedef struct elconv elconv_t ;
 
 /*%PAGE																*/
-/*********************************************************************
-*
-*	Name     :	__localeconv_a 
-*	Function :	ASCII front-end for localeconv
-*
-*********************************************************************/
-struct lconv *__localeconv_a(void)
+/**
+ * @brief Query numeric conventions
+ */
+struct lconv *
+__localeconv_a(void)
 {
 	struct	lconv* 	syslconv;
 	ATHD_t	*		myathdp;
@@ -160,13 +158,11 @@ struct lconv *__localeconv_a(void)
 }
 
 /*%PAGE																*/
-/*********************************************************************
-*
-*	Name     :	__setlocale_a 
-*	Function :	ASCII front-end for setlocale
-*
-*********************************************************************/
-char *__setlocale_a(int category, const char *locale)
+/**
+ @brief Sets, changes, or queries locale categories or groups of categories.
+ */
+char *
+__setlocale_a(int category, const char *locale)
 {
 	char	*locale_e;
 	char	*c;
@@ -184,16 +180,14 @@ char *__setlocale_a(int category, const char *locale)
 	return myathdp->estring1_a;
 }
 /*%PAGE                                                             */
-/*********************************************************************
-*
-*   Name     :  term_locale
-*   Function :  Termination routine for the locale
-*               library routines. This routine runs when the thread
-*               is terminated to clean up resources obtained by the
-*               terminating thread.
-*
-*********************************************************************/
-void term_locale(ATHD_t *athdptr)
+/**
+ * @brief Termination routine for the locale ibrary routines. 
+ *
+ * This routine runs when the thread is terminated to clean up 
+ * resources obtained by the terminating thread.
+ */
+void 
+term_locale(ATHD_t *athdptr)
 {
 	struct lconv * loc_elconv_a;
 	if ((loc_elconv_a = athdptr->elconv_a) != 0) {
@@ -202,4 +196,3 @@ void term_locale(ATHD_t *athdptr)
 	}
 	return;
 }
-	

@@ -1,6 +1,6 @@
 /**
- * @file utime_a.h
- * @brief Contains ASCII-to-EBCDIC front end for the utime functions.
+ * @file dlfcn_a.c
+ * @brief Contains ASCII-to-EBCDIC front end to the dlfcn.h functions.
  * 
  * Compile	:	GEN_PRAGMA_EXPORT - generate PRAGMA statements to
  * Options						export these entry points from the
@@ -19,36 +19,46 @@
  *              All rights reserved.                                *
  ********************************************************************/
 
-#include <utime.h>
+#include <dlfcn.h>
 #include "global_a.h"
- 
+
 #ifdef GEN_PRAGMA_EXPORT
-#pragma export(__utime_a)
-#pragma export(__utimes_a)
+#pragma export(__dlerror_a)
+#pragma export(__dlopen_a)
+#pragma export(__dlsym_a)
 #endif
- 
-#pragma map(__utime_a, "\174\174A00328")
-#pragma map(__utimes_a, "\174\174A00297")
+
+#pragma map (__dlerror_a, "\174\174A00438")
+#pragma map (__dlopen_a, "\174\174A00436")
+#pragma map (__dlsym_a, "\174\174A00437")
 
 /*%PAGE																*/
 /**
- * ASCII front-end routines for UTIME functions
+ * @brief Retrieve dll error message
  */
- 
-/**
- * @brief Set file access and modification times
- */
-int 
-__utime_a(const char *path, const struct utimbuf *times)
+char *
+__dlerror_a()
 {
-	return utime((const char *) __getEstring1_a(path), times);
+    char *err = dlerror();
+    if (err)
+        __toascii_a(err, err);
+    return err;
 }
- 
+
 /**
- * @brief Set file access and modification times
+ * @brief Open a DLL
  */
-int 
-__utimes_a(const char *path, const struct timeval *times)
+void *
+__dlopen_a(const char *file, int mode)
 {
-	return utimes((const char *) __getEstring1_a(path), times);
+    return dlopen((const char *) __getEstring1_a(file), mode);
+}
+
+/**
+ * @brief Locate a symbol within DLL
+ */
+void *
+__dlsym_a(void *__restrict__ handle, const char *__restrict__ name)
+{
+    return dlsym(handle, (const char *) __getEstring2_a(name));
 }

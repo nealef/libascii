@@ -1,6 +1,6 @@
 /**
- * @file utime_a.h
- * @brief Contains ASCII-to-EBCDIC front end for the utime functions.
+ * @file ctest_a.c
+ * @brief Contains ASCII-to-EBCDIC front end to the ctest functions.
  * 
  * Compile	:	GEN_PRAGMA_EXPORT - generate PRAGMA statements to
  * Options						export these entry points from the
@@ -19,36 +19,43 @@
  *              All rights reserved.                                *
  ********************************************************************/
 
-#include <utime.h>
+#include <ctest.h>
 #include "global_a.h"
- 
+
 #ifdef GEN_PRAGMA_EXPORT
-#pragma export(__utime_a)
-#pragma export(__utimes_a)
+#pragma export(__cdump_a)
+#pragma export(__ctrace_a)
+#pragma export(__csnap_a)
 #endif
- 
-#pragma map(__utime_a, "\174\174A00328")
-#pragma map(__utimes_a, "\174\174A00297")
+
+#pragma map(__cdump_a, "\174\174A00360")
+#pragma map(__csnap_a, "\174\174A00361")
+#pragma map(__ctrace_a, "\174\174A00363")
 
 /*%PAGE																*/
 /**
- * ASCII front-end routines for UTIME functions
- */
- 
-/**
- * @brief Set file access and modification times
+ * @brief Produce dump of the process
  */
 int 
-__utime_a(const char *path, const struct utimbuf *times)
+__cdump_a(char *s)
 {
-	return utime((const char *) __getEstring1_a(path), times);
+	return (cdump(__getEstring1_a(s)));
 }
- 
+
 /**
- * @brief Set file access and modification times
+ * @brief Produce condensed dump of the process
  */
-int 
-__utimes_a(const char *path, const struct timeval *times)
+int
+__csnap_a(char *s)
 {
-	return utimes((const char *) __getEstring1_a(path), times);
+	return (csnap(__getEstring1_a(s)));
+}
+
+/**
+ * @brief Produce strack trace of the process
+ */
+int
+__ctrace_a(char *s)
+{
+	return (ctrace(__getEstring1_a(s)));
 }
