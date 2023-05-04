@@ -17,7 +17,7 @@ CFLAGS	= -O2 -c $(DEBUG) $(CPPFLAGS) -I./ -D_ALL_SOURCE -qxplink -qlanglvl=exten
 		  -qfloat=ieee -qlongname -q32 -qseverity=e=CCN3296 
 
 # Define list of programs to be processed
-OBJS	= ctype_a.o dirent_a.o dlfcn_a.o dll_a.o dynit_a.o \
+OBJS	= ctest_a.o ctype_a.o dirent_a.o dlfcn_a.o dll_a.o dynit_a.o \
 		  fcntl_a.o fnmatch_a.o grp_a.o iconv_a.o \
 		  inet_a.o ipc_a.o langin_a.o locale_a.o init_a.o \
 		  netdb2_a.o nl_typ_a.o \
@@ -26,7 +26,7 @@ OBJS	= ctype_a.o dirent_a.o dlfcn_a.o dll_a.o dynit_a.o \
 		  unistd_a.o utime_a.o utsnam_a.o wchar_a.o
 
 
-all: 	libascii.a
+all		: 	libascii.a
 
 # Define archive dependencies and archive command
 libascii.a	: $(OBJS) _Ascii_a.h global_a.h

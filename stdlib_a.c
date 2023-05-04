@@ -76,7 +76,7 @@
 #pragma map(__strtol_a, "\174\174A00168")
 #pragma map(__strtoul_a, "\174\174A00169")
 #pragma map(__system_a, "\174\174A00189")
-#pragma map(__unsetnev_a, "\174\174A00471")
+#pragma map(__unsetenv_a, "\174\174A00471")
 #pragma map(__wcstombs_a, "\174\174A00013")
 #pragma map(__wctomb_a, "\174\174A00023")
 

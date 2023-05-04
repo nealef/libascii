@@ -61,6 +61,7 @@
 #pragma map(__getlogin_a, "\174\174A00261")
 #pragma map(__getpass_a, "\174\174A00263")
 #pragma map(__getwd_a, "\174\174A00197")
+#pragma map(__link_a, "\174\174A00199")
 #pragma map(__pathconf_a, "\174\174A00200")
 #pragma map(__readlink_a, "\174\174A00202")
 #pragma map(__rmdir_a, "\174\174A00203")

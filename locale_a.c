@@ -172,11 +172,12 @@ __setlocale_a(int category, const char *locale)
 	if (locale) {
 		locale_e = __getEstring1_a(locale);
 		c = setlocale(category, locale_e);
-	} 
-	else
+	} else
 		c = setlocale(category, NULL);
 	if (c)
 		__toascii_a(myathdp->estring1_a,c);
+    else
+        myathdp->estring1_a = NULL;
 	return myathdp->estring1_a;
 }
 /*%PAGE                                                             */

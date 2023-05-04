@@ -25,6 +25,7 @@
 #ifdef GEN_PRAGMA_EXPORT
 #pragma export(__asctime_a)
 #pragma export(__ctime_a)
+#pragma export(__gettimeofday_a)
 #pragma export(__gmtime_a)
 #pragma export(__gmtime_r_a)
 #pragma export(__localtime_a)
@@ -36,6 +37,7 @@
 
 #pragma map(__asctime_a, "\174\174A00324")
 #pragma map(__ctime_a, "\174\174A00325")
+#pragma map(__gettimeofday_a, "\174\174A00333")
 #pragma map(__gmtime_a, "\174\174A00334")
 #pragma map(__gmtime_r_a, "\174\174A00335")
 #pragma map(__localtime_a, "\174\174A00336")
