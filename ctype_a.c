@@ -22,6 +22,7 @@
 #ifdef GEN_PRAGMA_EXPORT
 #pragma export(__isalnum_a)
 #pragma export(__isalpha_a)
+#pragma export(__isascii_a)
 #pragma export(__iscntrl_a)
 #pragma export(__isdigit_a)
 #pragma export(__isgraph_a)
@@ -37,6 +38,7 @@
 
 #pragma map(__isalnum_a, "\174\174A00210")
 #pragma map(__isalpha_a, "\174\174A00211")
+#pragma map(__isascii_a, "\174\174ISASC")
 #pragma map(__iscntrl_a, "\174\174A00213")
 #pragma map(__isdigit_a, "\174\174A00214")
 #pragma map(__isgraph_a, "\174\174A00215")
@@ -72,6 +74,9 @@
 /*																	*/
 /********************************************************************/
  
+/**
+ * @brief Test whether character is alphanumeric
+ */
 int
 __isalnum_a( int c )
 {
@@ -80,10 +85,23 @@ __isalnum_a( int c )
 			( c >= ASC_0 && c <= ASC_9 ) );
 }
 
+/**
+ * @brief Test whether character is alphabetic
+ */
 int
 __isalpha_a( int c )
 {
-	return( ( c >= ASC_A && c <= ASC_Z ) || ( c >= ASC_a && c <= ASC_z ) );
+	return( ( c >= ASC_A && c <= ASC_Z ) || 
+			( c >= ASC_a && c <= ASC_z ) );
+}
+
+/**
+ * @brief Test whether character is a 7-bit ASCII character
+ */
+int
+__isascii_a(int c)
+{
+	return((c & 0x80) == 0);
 }
 
 int

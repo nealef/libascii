@@ -46,6 +46,9 @@
 #pragma export(__ttyname_a)
 #pragma export(__symlink_a)
 #pragma export(__unlink_a)
+#pragma export(__write_a)
+#pragma export(__read_a)
+#pragma export(__close_a)
 #endif
  
 #pragma map(__access_a, "\174\174A00192")
@@ -68,6 +71,9 @@
 #pragma map(__symlink_a, "\174\174A00205")
 #pragma map(__ttyname_a, "\174\174A00034")
 #pragma map(__unlink_a, "\174\174A00207")
+#pragma map(__write_a, "WRITOVRA")
+#pragma map(__read_a, "READOVRA")
+#pragma map(__close_a, "CLOSOVRA")
 
 /*%PAGE																*/
 /**
@@ -139,6 +145,10 @@ __execv_a(const char *path, char *const argv[])
 int 
 __execve_a(const char *path, char *const argv[], char *const envp[])
 {
+int i;
+printf("%s:%d - %s\n",__func__,__LINE__,__getEstring1_a(path));
+for (i = 0; argv[i] != NULL; i++)
+    printf("i. %s\n",i,argv[i]);
 	return execve((const char *) __getEstring1_a(path), argv, envp);
 }
 
@@ -288,4 +298,57 @@ int
 __unlink_a(const char *path)
 {
 	return unlink((const char *) __getEstring1_a(path));
+}
+
+/**
+ * @brief Override write() API 
+ *
+ * Convert to EBDCIC if output is directed to terminal/printer
+ *
+ */
+ssize_t 
+__write_a(int fd, const void *buf, size_t len)
+{
+    if (!__isAsciiFD(fd)) {
+        char *out = __alloca(len);
+        __toebcdiclen_a(out, buf, len);
+        return write(fd, out, len);
+    } else 
+        return write(fd, buf, len);
+}
+
+/**
+ * @brief Override read() API 
+ *
+ * Convert to ASCII if input is from terminal
+ *
+ */
+ssize_t 
+__read_a(int fd, void *buf, size_t len)
+{
+    ssize_t res;
+
+    res = read(fd, buf, len);
+    if (res > 0) {
+        if (!__isAsciiFD(fd)) {
+            __toasciilen_a(buf, buf, len);
+        } 
+    } 
+    return res;
+}
+
+/**
+ * @brief Override close() API 
+ *
+ * Remove fd from the fdxl_t linked list
+ *
+ */
+int
+__close_a(int fd)
+{
+    int res;
+
+    res = close(fd);
+    __deleteFD(fd);
+    return res;
 }

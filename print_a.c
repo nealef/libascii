@@ -89,10 +89,10 @@ __fprintf_a(FILE *stream, const char *format, ...)
 	va_end(parg);
 	if (result > 0) { 
 		/* Translate to ASCII if not stdxxx							*/
-		if (stream!=stderr && stream!=stdout)
+		if (stream != stderr && stream != stdout)
 			__toasciilen_a(buffer,buffer,result);
-		fwrite(buffer,1,result,stream);
-		}
+		result = fwrite(buffer,1,result,stream);
+    }
 	return(result);
 }
 
@@ -114,7 +114,7 @@ __printf_a(const char *format, ...)
 	result = CvrtToEbcdic(buffer,MAXSTRING_a,(char *)format,parg);
 	va_end(parg);
 	if (result > 0)
-		fwrite(buffer,1,result,stdout);
+		result = fwrite(buffer,1,result,stdout);
 	return(result);
 }
 
@@ -173,10 +173,10 @@ __vfprintf_a(FILE *stream, const char *format, va_list parg)
 	result = CvrtToEbcdic(buffer,MAXSTRING_a,(char *)format,parg);
 	if (result > 0) {
 		/* Translate to ASCII if not stdxxx							*/
-		if (stream!=stderr && stream!=stdout)
+		if (stream != stderr && stream != stdout)
 			__toasciilen_a(buffer,buffer,result);
-		fwrite(buffer,1,result,stream);
-		}
+		result = fwrite(buffer,1,result,stream);
+	}
 	return(result);
 }
 
@@ -195,7 +195,7 @@ __vprintf_a(const char *format, va_list parg)
 
 	result = CvrtToEbcdic(buffer,MAXSTRING_a,(char *)format,parg);
 	if (result > 0) 
-		fwrite(buffer,1,result,stdout);
+		result = fwrite(buffer,1,result,stdout);
 	return(result);
 }
 

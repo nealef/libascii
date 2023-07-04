@@ -38,14 +38,33 @@
 /*																	*/
 /********************************************************************/
 
+/**
+ * @brief Create a file and check its translation requirements
+ *
+ * @param pathname Path name
+ * @param mode     Creation mode flags
+ * @returns File Descriptor
+ */
 int
-__creat_a(const char* pathname, mode_t mode)
+__creat_a(const char* path, mode_t mode)
 {
-	char epathname[1024]; 
-	__toebcdic_a(epathname, pathname);
-	return(creat(epathname,mode));
+    int fd;
+
+	fd = creat(__getEstring1_a(path), mode);
+
+    __insertFD(fd);
+
+    return fd;
 }
  
+/**
+ * @brief Open a file and check its translation requirements
+ *
+ * @param pathname Path name
+ * @param oflag    Open flags
+ * @param mode     Mode flags (optional)
+ * @returns File Descriptor
+ */
 int
 __open_a(const char *path, int oflag, ...)
 {
@@ -56,10 +75,12 @@ __open_a(const char *path, int oflag, ...)
 	if (oflag & O_CREAT) {
 		va_start(ap, oflag);
 		tmpmode = va_arg(ap, mode_t);
-		fd = open((const char *) __getEstring1_a(path),oflag,tmpmode);
+		fd = open((const char *) __getEstring1_a(path), oflag, tmpmode);
 		va_end(ap);
-	}
-	else
-		fd = open((const char *) __getEstring1_a(path),oflag);
+	} else
+		fd = open((const char *) __getEstring1_a(path), oflag);
+
+    __insertFD(fd);
+
 	return(fd);
 }

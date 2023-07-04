@@ -19,6 +19,7 @@
  *              All rights reserved.                                *
  ********************************************************************/
 
+#define _XOPEN_SOURCE_EXTENDED 1
 #include <pwd.h>
 #include "global_a.h"
 
@@ -39,6 +40,7 @@
 struct passwd *
 __getpwent_a(void)
 {
+#ifndef __VM__
 	struct passwd *p;
 
 	p = getpwent();
@@ -50,6 +52,9 @@ __getpwent_a(void)
 	}
 	else
 		return(NULL);
+#else
+    return (NULL);
+#endif
 }
 
 /**
@@ -89,3 +94,15 @@ __getpwuid_a(uid_t uid)
 	else
 		return(NULL);
 }
+
+#ifdef __VM__
+void
+setpwent()
+{
+}
+
+void
+endpwent()
+{
+}
+#endif

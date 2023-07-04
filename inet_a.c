@@ -24,7 +24,11 @@
 
 #ifdef GEN_PRAGMA_EXPORT
 #pragma export(__inet_addr_a)
+#pragma export(__inet_ntoa_a)
 #endif
+
+#pragma map(__inet_addr_a, "\174\174A00401")
+#pragma map(__inet_ntoa_a, "\174\174A00402")
 
 /*%PAGE																*/
 /**

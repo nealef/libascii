@@ -23,12 +23,33 @@
 #include "global_a.h"
 
 #ifdef GEN_PRAGMA_EXPORT
+#pragma export(__getgrgid_a)
 #pragma export(__getgrnam_a)
 #endif
 
+#pragma map(__getgrgid_a, "\174\174A00254")
 #pragma map(__getgrnam_a, "\174\174A00255")
 
 /*%PAGE																*/
+/**
+ * @brief ASCII front-end for getgrgid
+ */
+struct group *
+__getgrgid_a(gid_t gid)
+{
+	char 	**curr;
+	struct	group *grp;
+
+	grp = getgrnam(gid);
+	if ((grp) != NULL) {
+		__toascii_a(grp->gr_name,grp->gr_name);
+		for (curr=grp->gr_mem; (*curr) != NULL; curr++)
+			__toascii_a(*curr, *curr);
+		return(grp);
+	} else
+		return(NULL);
+}
+
 /**
  * @brief ASCII front-end for getgrnam
  */

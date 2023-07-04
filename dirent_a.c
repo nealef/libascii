@@ -40,7 +40,7 @@
 DIR *
 __opendir_a(const char *path)
 {
-	return opendir((const char *) __getEstring1_a(path));
+ 	return opendir((const char *) __getEstring1_a(path));
 }
 
 struct dirent *

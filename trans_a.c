@@ -13,6 +13,8 @@
  *	- __getEstring4_a
  *	- __toascii_a
  *	- __toebcdic_a
+ *	- __toasciilen_a
+ *	- __toebcdiclen_a
  *
  * Compile	:	GEN_PRAGMA_EXPORT - generate PRAGMA statements to
  * Options						export these entry points from the
@@ -33,7 +35,10 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <iconv.h>
+#include <errno.h>
+#include <sys/stat.h>
 #include "global_a.h"
 
 #ifdef GEN_PRAGMA_EXPORT
@@ -49,6 +54,8 @@
 #pragma export(__toasciilen_a)
 #pragma export(__toebcdic_a)
 #endif
+
+#define cmsTTY 0x00030000
 
 /**
  * @brief area to hold buffers pointed to by AHD
@@ -99,8 +106,11 @@ __getAstring1_a(const char *einstr1)
 {
 	ATHD_t *myathdp;
 	myathdp = athdp();
-	strncpy(myathdp->estring1_a,einstr1,MAXSTRING_a);
-	__toascii_a(myathdp->estring1_a,myathdp->estring1_a);
+    myathdp->estring1_a = NULL;
+    if (einstr1 != NULL) {
+        strncpy(myathdp->estring1_a,einstr1,MAXSTRING_a);
+        __toascii_a(myathdp->estring1_a,myathdp->estring1_a);
+    }
 	return myathdp->estring1_a;
 }
 
@@ -116,8 +126,11 @@ __getAstring2_a(const char *einstr2)
 {
 	ATHD_t *myathdp;
 	myathdp = athdp();
-	strncpy(myathdp->estring2_a,einstr2,MAXSTRING_a);
-	__toascii_a(myathdp->estring2_a,myathdp->estring2_a);
+    myathdp->estring2_a = NULL;
+    if (einstr2 != NULL) {
+        strncpy(myathdp->estring2_a,einstr2,MAXSTRING_a);
+        __toascii_a(myathdp->estring2_a,myathdp->estring2_a);
+    }
 	return myathdp->estring2_a;
 }
 
@@ -133,8 +146,11 @@ __getEstring1_a(const char *ainstr1)
 {
 	ATHD_t *myathdp;
 	myathdp = athdp();
-	strncpy(myathdp->estring1_a,ainstr1,MAXSTRING_a);
-	__toebcdic_a(myathdp->estring1_a,myathdp->estring1_a);
+    myathdp->estring1_a = NULL;
+    if (ainstr1 != NULL) {
+        strncpy(myathdp->estring1_a,ainstr1,MAXSTRING_a);
+        __toebcdic_a(myathdp->estring1_a,myathdp->estring1_a);
+    }
 	return myathdp->estring1_a;
 }
 
@@ -150,8 +166,11 @@ __getEstring2_a(const char *ainstr2)
 {
 	ATHD_t *myathdp;
 	myathdp = athdp();
-	strncpy(myathdp->estring2_a,ainstr2,MAXSTRING_a);
-	__toebcdic_a(myathdp->estring2_a,myathdp->estring2_a);
+    myathdp->estring2_a = NULL;
+    if (ainstr2 != NULL) {
+        strncpy(myathdp->estring2_a,ainstr2,MAXSTRING_a);
+        __toebcdic_a(myathdp->estring2_a,myathdp->estring2_a);
+    }
 	return myathdp->estring2_a;
 }
 
@@ -167,8 +186,11 @@ __getEstring3_a(const char *ainstr3)
 {
 	ATHD_t *myathdp;
 	myathdp = athdp();
-	strncpy(myathdp->estring3_a,ainstr3,MAXSTRING_a);
-	__toebcdic_a(myathdp->estring3_a,myathdp->estring3_a);
+    myathdp->estring3_a = NULL;
+    if (ainstr3 != NULL) {
+        strncpy(myathdp->estring3_a,ainstr3,MAXSTRING_a);
+        __toebcdic_a(myathdp->estring3_a,myathdp->estring3_a);
+    }
 	return myathdp->estring3_a;
 }
 
@@ -184,8 +206,11 @@ __getEstring4_a(const char *ainstr4)
 {
 	ATHD_t *myathdp;
 	myathdp = athdp();
-	strncpy(myathdp->estring4_a,ainstr4,MAXSTRING_a);
-	__toebcdic_a(myathdp->estring4_a,myathdp->estring4_a);
+    myathdp->estring4_a = NULL;
+    if (ainstr4 != NULL) {
+        strncpy(myathdp->estring4_a,ainstr4,MAXSTRING_a);
+        __toebcdic_a(myathdp->estring4_a,myathdp->estring4_a);
+    }
 	return myathdp->estring4_a;
 }
 
@@ -236,7 +261,8 @@ __toebcdic_a(char *outebcdicstr, const char *inasciistr)
  * @param inebcdicstr Input EBCDIC string
  * @param insize length of input string
  */
-void __toasciilen_a(char *outasciistr, const char *inebcdicstr,int insize)
+void 
+__toasciilen_a(char *outasciistr, const char *inebcdicstr,int insize)
 {
 	size_t rc;
 	size_t in_size, out_size;
@@ -245,10 +271,60 @@ void __toasciilen_a(char *outasciistr, const char *inebcdicstr,int insize)
 	out_size = in_size = insize;
 	rc = iconv(myathdp->cd_EtoA,(char **) &inebcdicstr, &in_size, &outasciistr, &out_size);
 	if (rc == (size_t) -1)
-		__panic_a("Error from iconv() in __toascii_a()");
+		__panic_a("Error from iconv() in __toasciilen_a()");
 	return;
 }
 
+/**
+ * @brief Convert ASCII (ISO8859-1) string to EBCDIC (IBM-1047) with length.
+ *
+ * @param inascii Input ASCII buffer
+ * @param outebcdic Output EBCDIC buffer
+ * @param insize length of input 
+ */
+void 
+__toebcdiclen_a(char *outascii, const char *inebcdic, int insize)
+{
+	size_t rc;
+	size_t in_size, out_size;
+	ATHD_t *myathdp;
+	myathdp = athdp();  /* get pointer to ATHD thread structure */
+	out_size = in_size = insize;
+	rc = iconv(myathdp->cd_AtoE,(char **) &inebcdic, &in_size, &outascii, &out_size);
+	if (rc == (size_t) -1)
+		__panic_a("Error from iconv() in __toebcdiclen__a()");
+	return;
+}
+
+/**
+ * @brief check STDxxx for translation
+ */
+static void
+checkStdIO()
+{
+    FILE *std[] = { stdin, stdout, stderr, NULL };
+    int i;
+
+    for (i = 0; std[i] != NULL; i++) {
+        struct stat info;
+
+        if (fstat(fileno(std[i]), &info) == 0) {
+            if (S_ISREG(info.st_mode)) {
+                if ((info.st_useraudit == iso8859) || 
+                    (info.st_useraudit == mixAsc))
+                    std[i]->__fp->__fcb_ascii = 0;
+                else
+                    std[i]->__fp->__fcb_ascii = 1;
+            } else {
+                if (info.st_rdev == cmsTTY)
+                    std[i]->__fp->__fcb_ascii = 0;
+                else
+                    std[i]->__fp->__fcb_ascii = 1;
+            }
+        }
+    }
+}
+         
 /*********************************************************************
 *
 *	Name   	 :	init_trans_a
@@ -258,7 +334,8 @@ void __toasciilen_a(char *outasciistr, const char *inebcdicstr,int insize)
 *				later use.
 *
 *********************************************************************/
-void init_trans_a()
+void 
+init_trans_a()
 {
 	ATHD_t 		*myathdp;
 	ebuffers_t  *myebuffers;
@@ -280,6 +357,8 @@ void init_trans_a()
 	myathdp->estring2_a = (char *)&(myebuffers->estring2_buffer); 
 	myathdp->estring3_a = (char *)&(myebuffers->estring3_buffer); 
 	myathdp->estring4_a = (char *)&(myebuffers->estring4_buffer); 
+
+    checkStdIO();
 
 	return;
 }
@@ -315,23 +394,4 @@ term_trans(ATHD_t *athdptr)
 		free(loc_ebuffers);
 	}
 	return;
-}
-
-/**
- * @brief Determine if a file is associated with a terminal or printer device
- *
- * @param stream File stream
- * @returns 0 if not a terminal or printer device, otherwise 1
- */
-int
-__isTerminal(FILE *stream)
-{
-    fldata_t fl;
-    char fName[1024];
-
-    if (fldata(stream, (char *) &fName, &fl) != 0) 
-        return ((fl.__device == __TERMINAL) || 
-                (fl.__device == __PRINTER));
-    else
-        return (0);
 }

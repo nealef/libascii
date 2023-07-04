@@ -38,12 +38,14 @@
  #pragma export(__atoi_a)
  #pragma export(__atol_a)
  #pragma export(__ecvt_a)
+ #pragma export(__Envna_a)
  #pragma export(__fcvt_a)
  #pragma export(__gcvt_a)
  #pragma export(__getenv_a)
  #pragma export(__l64a_a)
  #pragma export(__mbstowcs_a)
  #pragma export(__mbtowc_a)
+ #pragma export(__mkstemp_a)
  #pragma export(__mktemp_a)
  #pragma export(__putenv_a)
  #pragma export(__realpath_a)
@@ -61,6 +63,7 @@
 #pragma map(__atof_a, "\174\174A00164")
 #pragma map(__atoi_a, "\174\174A00165")
 #pragma map(__atol_a, "\174\174A00166")
+#pragma map(__Envna_a, "\174\174ENVNA") 
 #pragma map(__ecvt_a, "\174\174A00173")
 #pragma map(__fcvt_a, "\174\174A00174")
 #pragma map(__gcvt_a, "\174\174A00175")
@@ -68,6 +71,7 @@
 #pragma map(__l64a_a, "\174\174A00176")
 #pragma map(__mbstowcs_a, "\174\174A00006")
 #pragma map(__mbtowc_a, "\174\174A00008")
+#pragma map(__mkstemp_a, "\174\174A00184")
 #pragma map(__mktemp_a, "\174\174A00240")
 #pragma map(__putenv_a, "\174\174A00186")
 #pragma map(__realpath_a, "\174\174A00187")
@@ -201,8 +205,8 @@ __wctomb_a(char *pmb, wchar_t c)
     int len;
 
 	len = wctomb(pmb, c);
-    if (len > 0)
-        __toasciilen_a(pmb, pmb, len);
+//    if (len > 0)
+//        __toasciilen_a(pmb, pmb, len);
     return(len);
 }                                                       
 
@@ -214,9 +218,21 @@ __wcstombs_a(char *pmb, wchar_t *string, size_t n)
 {                                                                
     size_t len;
 	len = wcstombs(pmb, string, n);
-    if (len > 0)
-        __toasciilen_a(pmb, pmb, len);
     return(len);
+}
+
+/**
+ * @brief Make a unique file name
+ */
+int
+__mkstemp_a(char *template)
+{
+    int res;
+
+	__toebcdic_a(template,template);  /* convert template to ebcdic */
+	res = mkstemp(template);          /* call mkstemp               */
+	__toascii_a(template,template);   /* convert template back to ascii */
+	return (res);
 }
 
 /**
@@ -358,6 +374,48 @@ int
 __unsetenv_a(const char *name)
 {
     return setenv((const char *) __getEstring1_a(name), "", 1);
+}
+
+/**
+ * @brief Return the environment in ASCII
+ */
+char ***
+__EnvnA(void)
+{
+    extern char **environ;
+
+    char **e = environ;
+    static char **a = NULL;
+    size_t lEnv = 0;
+    int iEnv;
+
+    /*
+     * Free any previous ASCII environ. 
+     */
+    if (a != NULL) {
+        for (iEnv = 0; a[iEnv] != NULL; iEnv++) {
+            free(a[iEnv]);
+        }
+        free(a);
+    }
+
+    for (iEnv = 0; e[iEnv] != NULL; iEnv++)
+        lEnv += sizeof(e);
+
+    lEnv += sizeof(e);
+
+    a = malloc(lEnv);
+    memset(a, 0, lEnv);
+    
+    for (iEnv = 0; e[iEnv] != NULL; iEnv++) {
+        char *p;
+        p = strdup(e[iEnv]);
+        __toascii_a(p, (const char *)p);
+        a[iEnv] = p;
+    }
+    a[iEnv] = NULL;
+
+    return &a;
 }
 
 /*%PAGE																*/

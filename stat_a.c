@@ -64,7 +64,7 @@ __chmod_a(const char *path, mode_t mode)
 int 
 __lstat_a(const char *path, struct stat *buf)
 {
-	return lstat((const char *) __getEstring1_a(path), buf);
+    return lstat((const char *) __getEstring1_a(path), buf);
 }
  
 /**
@@ -113,7 +113,7 @@ __statvfs_a(const char *path, struct statvfs *fsinfo)
 	int rc;
  
 	rc = statvfs((const char *) __getEstring1_a(path), fsinfo);
-	if (rc==0)
+	if (rc == 0)
 		__toascii_a(fsinfo->f_OEcbid, fsinfo->f_OEcbid);
 	return rc;
 }

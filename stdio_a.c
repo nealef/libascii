@@ -121,6 +121,7 @@ __fdopen_a(int fildes, const char *options)
 char *
 __fgets_a(char *string, int n, FILE *stream)
 {
+printf("%s:%d - %d\n",__func__,__LINE__,__isAsciiStream(stream));
 	if (stream==stdin) {  /* assume the input is ebcdic */
 		if (fgets(string, n, stream) != NULL) {
 			__toascii_a(string, string);
@@ -152,8 +153,30 @@ __fgets_a(char *string, int n, FILE *stream)
 FILE *
 __fopen_a(const char *path, const char *mode)
 {
-	return fopen((const char *) __getEstring1_a(path),
-				 (const char *) __getEstring2_a(mode));
+    FILE *fp;
+    struct stat info;
+
+	fp = fopen((const char *) __getEstring1_a(path),
+	           (const char *) __getEstring2_a(mode));
+
+    if (fp != NULL) {
+        if (stat(path, &info) == 0) {
+            if (S_ISREG(info.st_mode)) {
+                if ((info.st_useraudit == iso8859) || 
+                    (info.st_useraudit == mixAsc))
+                    fp->__fp->__fcb_ascii = 1;
+                else
+                    fp->__fp->__fcb_ascii = 0;
+            } if (strcmp(path, "/dev/tty") == 0)
+                fp->__fp->__fcb_ascii = 0;
+            else
+                fp->__fp->__fcb_ascii = 1;
+        }
+    }
+
+printf("%s:%d - opened %s ASCII: %d\n",__func__,__LINE__,__getEstring_a(path),fp->__fp->__fcb_ascii);
+    return fp;
+
 }
  
 /**
@@ -166,7 +189,7 @@ __fputc_a(int c, FILE *stream)
 {
 	char input_char[]=" ";      /* 2 bytes work area : ' '+'\0' */
 	input_char[0]=c;
-	if ((stream==stdout) || (stream == stderr))
+    if (!__isAsciiStream(stream)) 
 		__toebcdic_a(input_char, input_char);
 	return (fputc(input_char[0], stream));
 }
@@ -182,7 +205,7 @@ __fputs_a(char *fstring, FILE *stream)
 	int tmpint;
 	/* if stdout or stderr, then convert string to ebcdic, else
        preserve in ascii 											*/
-	if ((stream == stderr) || (stream == stdout)) {
+    if (!__isAsciiStream(stream)) {
         char *estring = __alloca(strlen(fstring) + 1);
 		__toebcdic_a(estring,fstring);
 		tmpint = fputs(estring,stream);
@@ -194,20 +217,18 @@ __fputs_a(char *fstring, FILE *stream)
 /**
  * @brief Read from a stream
  *
- * Assume ASCII input if stdin
+ * Convert
  */
 int 
 __fread_a(void *buffer,size_t size,size_t count, FILE *stream)
 {
-	size_t tmpint;
-	/* if stdin , then convert string to ascii for return          */
-	if (stream == stdin) {
-		tmpint = fread(buffer,size,count,stream);
-		__toascii_a(buffer,buffer);       /* convert back to ascii */
-		return(tmpint);
+	size_t len;
+    len = fread(buffer, size, count, stream);
+    if (len > 0) {
+        if (!__isAsciiStream(stream))
+            __toasciilen_a(buffer, buffer, len);      
 	}
-	else
-		return(fread(buffer,size,count,stream));
+    return(len);
 }
  
 /**
@@ -216,9 +237,16 @@ __fread_a(void *buffer,size_t size,size_t count, FILE *stream)
 FILE *
 __freopen_a( const char *path, const char *mode, FILE *stream)
 {
-	return freopen((char const *) __getEstring1_a(path),
-				   (char const *) __getEstring2_a(mode),
+    FILE *fp;
+    int tag = stream->__fp->__fcb_ascii;
+
+
+	fp = freopen((char const *) __getEstring1_a(path),
+	             (char const *) __getEstring2_a(mode),
 				   stream);
+    fp->__fp->__fcb_ascii = tag;
+
+    return fp;
 }
  
 /**
@@ -228,9 +256,9 @@ size_t
 __fwrite_a(const void *buffer, size_t size, size_t count, FILE *stream)
 {
 	size_t	bytes;
-	if (stream==stderr || stream==stdout) {
-        char *out = __alloca(buffer);
-		__toebcdic_a((char *) out, (char *) buffer);
+	if (__isAsciiStream(stream)) {
+        char *out = __alloca(size * count);
+		__toebcdiclen_a((char *) out, (char *) buffer, size * count);
         bytes = fwrite(out, size, count, stream);
     } else 
         bytes = fwrite(buffer, size, count, stream);
@@ -261,7 +289,8 @@ __getc_a(FILE *stream)
 	input_char[0]=getc(stream);
 	if (input_char[0] == 0xff)
 		return(-1);
-	if (stream==stdin)
+printf("%s:%d - %c (%02x) %d\n",__func__,__LINE__,input_char[0],input_char[0],__isAsciiStream(stream));
+	if (!__isAsciiStream(stream)) 
 		__toascii_a(input_char, input_char);
 	return (input_char[0]);
 }

@@ -40,11 +40,13 @@
 #pragma export(__fscanf_a)
 #pragma export(__scanf_a)
 #pragma export(__sscanf_a)
+#pragma export(__vsscanf_a)
 #endif
 
 #pragma map(__fscanf_a, "\174\174A00159")
 #pragma map(__scanf_a, "\174\174A00160")
 #pragma map(__sscanf_a, "\174\174A00161")
+#pragma map(__vsscanf_a, "\174\174A00443")
 
 typedef	int		BOOL;
 #define	FALSE	0
@@ -174,8 +176,24 @@ __scanf_a(const char *format, ...)
 int 
 __sscanf_a(const char * buffer, const char *format, ...)
 {
-	extern	argInfo ai[20]; 
 	va_list	parg;
+    int result;
+    
+    va_start(parg, format);
+    result = __vsscanf_a(buffer, format, parg);
+    va_end(parg);
+    return result;
+}
+
+/**
+ * @brief Scan a string in memory
+ *
+ * Assumes ASCII format string and an ASCII buffer
+ */
+int
+__vsscanf_a(const char *buffer, const char *format, va_list parg)
+{
+	extern	argInfo ai[20]; 
 	int		result;
 	int		argCount;
 	char	eformat[200]; 
@@ -203,7 +221,6 @@ __sscanf_a(const char * buffer, const char *format, ...)
 
 	/* Collect arg info, call real scan routine and convert any		*/
 	/* data returned as character or string to ASCII				*/
-	va_start(parg,format);
 	argCount = getArgs(eformatp,parg);
 	result = sscanf(ebufferp,eformatp,
 			ai[0].argPtr,ai[1].argPtr,ai[2].argPtr,ai[3].argPtr,
@@ -213,7 +230,6 @@ __sscanf_a(const char * buffer, const char *format, ...)
 			ai[16].argPtr,ai[17].argPtr,ai[19].argPtr,ai[19].argPtr);
 	if (result != EOF && result > 0)
 		convertArgsToAscii(argCount);
-	va_end(parg);
 
 	/* Free temp buffers if obtained								*/
 	if (lenbuffer >= sizeof(ebuffer))

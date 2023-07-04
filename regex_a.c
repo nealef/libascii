@@ -26,7 +26,14 @@
 
 #ifdef GEN_PRAGMA_EXPORT
 #pragma export(__regcomp_a)
+#pragma export(__regexec_a)
+#pragma export(__regfree_a)
 #endif
+
+#pragma map(__regcomp_a, "\174\174A00041")
+#pragma map(__regerror_a, "\174\174A00043")
+#pragma map(__regexec_a, "\174\174A00045")
+#pragma map(__regfree_a, "\174\174A00047")
  
 /*%PAGE																*/
 /**
@@ -36,4 +43,37 @@ int
 __regcomp_a(regex_t *preg, const char *pattern, int cflags)
 {
 	return regcomp(preg, (const char *) __getEstring1_a(pattern), cflags);
+}
+ 
+/*%PAGE																*/
+/**
+ * @brief Execute a regular expression
+ */
+int 
+__regexec_a(regex_t *preg, const char *pattern, size_t nmatch, regmatch_t *pmatch, int eflags)
+{
+	return regexec(preg, (const char *) __getEstring1_a(pattern), nmatch, pmatch, eflags);
+}
+
+/**
+ * @brief Return an error message
+ */
+size_t 
+__regerror_a(int errcode, const regex_t *preg, char *errbuf, size_t errbuf_size)
+{
+    int res;
+
+    res = regerror(errcode, preg, errbuf, errbuf_size);
+    if (res > 0)
+        __toasciilen_a(errbuf, errbuf, res);
+    return res;
+}
+
+/**
+ * @brief Free a regular expression
+ */
+void
+__regfree_a(regex_t *re)
+{
+    regfree(re);
 }

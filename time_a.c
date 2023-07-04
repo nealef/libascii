@@ -20,6 +20,8 @@
  ********************************************************************/
 
 #include <time.h>
+#include <stdlib.h>
+#include <string.h>
 #include "global_a.h"
 
 #ifdef GEN_PRAGMA_EXPORT
@@ -33,6 +35,7 @@
 #pragma export(__mktime_a)
 #pragma export(__strftime_a)
 #pragma export(__tzset_a)
+#pragma export(__tzznA_a)
 #endif
 
 #pragma map(__asctime_a, "\174\174A00324")
@@ -45,6 +48,7 @@
 #pragma map(__mktime_a, "\174\174A00338")
 #pragma map(__strftime_a, "\174\174A00095")
 #pragma map(__tzset_a, "\174\174A00327")
+#pragma map(__tzznA_a, "\174\174TZZNA")
 
 /*%PAGE																*/
 /**
@@ -135,6 +139,38 @@ __tzset_a(void)
 {
     tzset();
 	return;
+}
+
+/**
+ *	@brief Return timezone name
+ */
+char **
+__tzznA_a(void)
+{
+    extern char *tzname[2];
+    static char *tzn[2] = { NULL, NULL };
+    char *p;
+
+    if (tzn[0] != NULL)
+        free(tzn[0]);
+    if (tzn[1] != NULL)
+        free(tzn[1]);
+    
+    if (tzname[0] != NULL) {
+        p = strdup(tzname[0]);
+        __toascii_a(p, (const char *)p);
+        tzn[0] = p;
+    } else
+        tzn[0] = NULL;
+
+    if (tzname[1] != NULL) {
+        p = strdup(tzname[1]);
+        __toascii_a(p, (const char *)p);
+        tzn[1] = p;
+    } else 
+        tzn[1] = NULL;
+    
+	return tzn;
 }
 
 /**
