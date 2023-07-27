@@ -12,9 +12,10 @@ DEBUG		=
 #		CFLAGS		= Compiler flags
 #
 CC		= xlc
-CPPFLAGS = -D_XOPEN_SOURCE=600 -D_XOPEN_SOURCE_EXTENDED=1 -D__VM__ -D_UNIX03_SOURCE
+CPPFLAGS = -D_XOPEN_SOURCE=600 -D_XOPEN_SOURCE_EXTENDED=1 -D__VM__ -D_UNIX03_SOURCE -D_OPEN_THREADS 
 CFLAGS	= -O2 -c $(DEBUG) $(CPPFLAGS) -I./ -D_ALL_SOURCE -qxplink -qlanglvl=extended:extc89:extc99 \
-		  -qfloat=ieee -qlongname -q32 -qseverity=e=CCN3296 -qasm
+		  -qfloat=ieee -qlongname -q32 -qseverity=e=CCN3296 -qasm -qdll
+SHLDFLAGS = -O -g -qxplink -qdll -Wl,dll -q32
 
 # Define list of programs to be processed
 OBJS	= ctest_a.o ctype_a.o dirent_a.o dlfcn_a.o \
@@ -26,12 +27,14 @@ OBJS	= ctest_a.o ctype_a.o dirent_a.o dlfcn_a.o \
 		  unistd_a.o utime_a.o utsnam_a.o wchar_a.o zvm_stubs.o
 
 
-all		: 	libascii.a
+all		: 	libascii.a libascii.so
 
 # Define archive dependencies and archive command
 libascii.a	: $(OBJS) _Ascii_a.h global_a.h
-	ar -rc libascii.a $(OBJS) 
+			  ar -rc $@ $(OBJS) 
 
+libascii.so : $(OBJS) _Ascii_a.h global_a.h
+			  $(CC) $(SHLDFLAGS) -o $@ $(OBJS)
 # Define compile dependencies and command for each part
 .c.o		: 
 

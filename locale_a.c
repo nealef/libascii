@@ -2,10 +2,6 @@
  * @file locale_a.c
  * @brief Contains ASCII-to-EBCDIC front end to the locale functions.
  * 
- * Compile	:	GEN_PRAGMA_EXPORT - generate PRAGMA statements to
- * Options						export these entry points from the
- *								DLL								
- *															
  * Notes	:	All the procedures are name "__xxxxxxxx_a" where
  *				xxxxxxxx is the name of the standard C run-time
  *				function name. Unless otherwise noted, all functions
@@ -22,10 +18,8 @@
 #include <locale.h>
 #include "global_a.h"
 
-#ifdef GEN_PRAGMA_EXPORT
- #pragma export(__localeconv_a)
- #pragma export(__setlocale_a)
-#endif
+#pragma export(__localeconv_a)
+#pragma export(__setlocale_a)
 
 #pragma map(__localeconv_a, "\174\174A00075")
 #pragma map(__setlocale_a, "\174\174A00151")

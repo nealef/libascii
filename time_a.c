@@ -2,10 +2,6 @@
  * @file time_a.c
  * @brief Contains ASCII-to-EBCDIC front end to the time functions.
  * 
- * Compile	:	GEN_PRAGMA_EXPORT - generate PRAGMA statements to
- * Options						export these entry points from the
- *								DLL								
- *															
  * Notes	:	All the procedures are name "__xxxxxxxx_a" where
  *				xxxxxxxx is the name of the standard C run-time
  *				function name. Unless otherwise noted, all functions
@@ -24,7 +20,6 @@
 #include <string.h>
 #include "global_a.h"
 
-#ifdef GEN_PRAGMA_EXPORT
 #pragma export(__asctime_a)
 #pragma export(__ctime_a)
 #pragma export(__gettimeofday_a)
@@ -36,7 +31,6 @@
 #pragma export(__strftime_a)
 #pragma export(__tzset_a)
 #pragma export(__tzznA_a)
-#endif
 
 #pragma map(__asctime_a, "\174\174A00324")
 #pragma map(__ctime_a, "\174\174A00325")

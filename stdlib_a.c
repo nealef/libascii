@@ -2,10 +2,6 @@
  * @file stdlib_a.c
  * @brief Contains ASCII-to-EBCDIC front end to the stdlib functions.
  * 
- * Compile	:	GEN_PRAGMA_EXPORT - generate PRAGMA statements to
- * Options						export these entry points from the
- *								DLL								
- *															
  * Notes	:	All the procedures are name "__xxxxxxxx_a" where
  *				xxxxxxxx is the name of the standard C run-time
  *				function name. Unless otherwise noted, all functions
@@ -32,42 +28,44 @@
 #endif
 #include "global_a.h"
 
-#ifdef GEN_PRAGMA_EXPORT
- #pragma export(__a64l_a)
- #pragma export(__atof_a)
- #pragma export(__atoi_a)
- #pragma export(__atol_a)
- #pragma export(__ecvt_a)
- #pragma export(__Envna_a)
- #pragma export(__fcvt_a)
- #pragma export(__gcvt_a)
- #pragma export(__getenv_a)
- #pragma export(__l64a_a)
- #pragma export(__mbstowcs_a)
- #pragma export(__mbtowc_a)
- #pragma export(__mkstemp_a)
- #pragma export(__mktemp_a)
- #pragma export(__putenv_a)
- #pragma export(__realpath_a)
- #pragma export(__setenv_a)
- #pragma export(__strtod_a)
- #pragma export(__strtol_a)
- #pragma export(__strtoul_a)
- #pragma export(__system_a)
- #pragma export(__unsetenv_a)
- #pragma export(__wcstombs_a)
- #pragma export(__wctomb_a)
-#endif
+#pragma export(__Envna_a)
+#pragma export(__a64l_a)
+#pragma export(__atof_a)
+#pragma export(__atoi_a)
+#pragma export(__atol_a)
+#pragma export(__ecvt_a)
+#pragma export(__fcvt_a)
+#pragma export(__gcvt_a)
+#pragma export(__getenv_a)
+#pragma export(__getenv_ea)
+#pragma export(__l64a_a)
+#pragma export(__mbstowcs_a)
+#pragma export(__mbtowc_a)
+#pragma export(__mkstemp_a)
+#pragma export(__mktemp_a)
+#pragma export(__putenv_a)
+#pragma export(__realpath_a)
+#pragma export(__setenv_a)
+#pragma export(__strtod_a)
+#pragma export(__strtoimax_a)
+#pragma export(__strtol_a)
+#pragma export(__strtoul_a)
+#pragma export(__strtoumax_a)
+#pragma export(__system_a)
+#pragma export(__unsetenv_a)
+#pragma export(__wcstombs_a)
+#pragma export(__wctomb_a)
 
+#pragma map(__Envna_a, "\174\174ENVNA") 
 #pragma map(__a64l_a, "\174\174A00172")
 #pragma map(__atof_a, "\174\174A00164")
 #pragma map(__atoi_a, "\174\174A00165")
 #pragma map(__atol_a, "\174\174A00166")
-#pragma map(__Envna_a, "\174\174ENVNA") 
 #pragma map(__ecvt_a, "\174\174A00173")
 #pragma map(__fcvt_a, "\174\174A00174")
 #pragma map(__gcvt_a, "\174\174A00175")
 #pragma map(__getenv_a, "\174\174A00181")
+#pragma map(__getenv_ea, "\174\174A00423")
 #pragma map(__l64a_a, "\174\174A00176")
 #pragma map(__mbstowcs_a, "\174\174A00006")
 #pragma map(__mbtowc_a, "\174\174A00008")
@@ -77,8 +75,10 @@
 #pragma map(__realpath_a, "\174\174A00187")
 #pragma map(__setenv_a, "\174\174A00188")
 #pragma map(__strtod_a, "\174\174A00167")
+#pragma map(__strtoimax_a, "\174\174A00451")
 #pragma map(__strtol_a, "\174\174A00168")
 #pragma map(__strtoul_a, "\174\174A00169")
+#pragma map(__strtoumax_a, "\174\174A00452")
 #pragma map(__system_a, "\174\174A00189")
 #pragma map(__unsetenv_a, "\174\174A00471")
 #pragma map(__wcstombs_a, "\174\174A00013")
@@ -179,6 +179,15 @@ __getenv_a(const char *varname)
 }
 
 /**
+ * @brief Get an environment variable (enhanced ASCII)
+ */
+char *
+__getenv_ea(const char *varname)
+{
+    return __getenv_a(varname);
+}
+
+/**
  * @brief Convert multibyte character to wide character
  */
 int 
@@ -256,7 +265,7 @@ __mktemp_a(char *template)
 int 
 __putenv_a(const char *envvar)
 {
-	return putenv((const char *) __getEstring1_a(envvar));
+	return putenv(__getEstring1_a(envvar));
 }
 
 /**
@@ -302,6 +311,23 @@ __strtod_a( const char *nptr, char **endptr)
 }
 
 /**
+ * @brief Convert string to intmax
+ */
+intmax_t
+__strtoimax_a( const char *nptr, char **endptr, int base )
+{
+	char	*tmp;
+	long	l;
+	char	*e;
+
+	tmp = __getEstring1_a(nptr);
+	l = strtol(tmp, &e, base);
+	if ( endptr )
+		*endptr = (char*) nptr + (e - tmp);
+	return (intmax_t) l;
+}
+
+/**
  * @brief Convert string to long
  */
 long int 
@@ -322,7 +348,7 @@ __strtol_a( const char *nptr, char **endptr, int base )
  * @brief Convert string to unsigned long
  */
 unsigned long int 
-__strtoul_a( const char *s, char **endptr, int base )
+__strtoul_a(const char *s, char **endptr, int base)
 {
 	char		*tmp;
 	unsigned	long ul;
@@ -336,10 +362,27 @@ __strtoul_a( const char *s, char **endptr, int base )
 }
 
 /**
+ * @brief Convert string to uintmax_t
+ */
+uintmax_t
+__strtoumax_a(const char *s, char **endptr, int base)
+{
+	char		*tmp;
+	unsigned	long ul;
+	char		*e;
+
+	tmp = __getEstring1_a(s);
+	ul = strtoul(tmp, &e, base);
+	if ( endptr )
+		*endptr = (char*) s + (e - tmp);
+	return (uintmax_t) ul;
+}
+
+/**
  * @brief Issue a system command
  */
 int 
-__system_a( const char *s )
+__system_a(const char *s)
 {
 	if (s)
 		return system(__getEstring1_a(s));
@@ -351,7 +394,7 @@ __system_a( const char *s )
  * @brief Convert Base-64 String Representation to Long Integer
  */
 long 
-__a64l_a( const char *s )
+__a64l_a(const char *s)
 {
 	return a64l(__getEstring1_a(s));
 }
@@ -380,7 +423,7 @@ __unsetenv_a(const char *name)
  * @brief Return the environment in ASCII
  */
 char ***
-__EnvnA(void)
+__Envna_a(void)
 {
     extern char **environ;
 

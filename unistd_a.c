@@ -2,10 +2,6 @@
  * @file unistd_a.c
  * @brief Contains ASCII-to-EBCDIC front end to the unistd functions.
  * 
- * Compile	:	GEN_PRAGMA_EXPORT - generate PRAGMA statements to
- * Options						export these entry points from the
- *								DLL								
- *															
  * Notes	:	All the procedures are name "__xxxxxxxx_a" where
  *				xxxxxxxx is the name of the standard C run-time
  *				function name. Unless otherwise noted, all functions
@@ -25,10 +21,10 @@
 #include <pwd.h>
 #include "global_a.h"
  
-#ifdef GEN_PRAGMA_EXPORT
 #pragma export(__access_a)
 #pragma export(__chdir_a)
 #pragma export(__chown_a)
+#pragma export(__close_a)
 #pragma export(__confstr_a)
 #pragma export(__ctermid_a)
 #pragma export(__execv_a)
@@ -41,19 +37,18 @@
 #pragma export(__getwd_a)
 #pragma export(__link_a)
 #pragma export(__pathconf_a)
+#pragma export(__read_a)
 #pragma export(__readlink_a)
 #pragma export(__rmdir_a)
-#pragma export(__ttyname_a)
 #pragma export(__symlink_a)
+#pragma export(__ttyname_a)
 #pragma export(__unlink_a)
 #pragma export(__write_a)
-#pragma export(__read_a)
-#pragma export(__close_a)
-#endif
  
 #pragma map(__access_a, "\174\174A00192")
 #pragma map(__chdir_a, "\174\174A00193")
 #pragma map(__chown_a, "\174\174A00194")
+#pragma map(__close_a, "CLOSOVRA")
 #pragma map(__confstr_a, "\174\174A00238")
 #pragma map(__ctermid_a, "\174\174A00274")
 #pragma map(__execv_a, "\174\174A00068")
@@ -66,14 +61,13 @@
 #pragma map(__getwd_a, "\174\174A00197")
 #pragma map(__link_a, "\174\174A00199")
 #pragma map(__pathconf_a, "\174\174A00200")
+#pragma map(__read_a, "READOVRA")
 #pragma map(__readlink_a, "\174\174A00202")
 #pragma map(__rmdir_a, "\174\174A00203")
 #pragma map(__symlink_a, "\174\174A00205")
 #pragma map(__ttyname_a, "\174\174A00034")
 #pragma map(__unlink_a, "\174\174A00207")
 #pragma map(__write_a, "WRITOVRA")
-#pragma map(__read_a, "READOVRA")
-#pragma map(__close_a, "CLOSOVRA")
 
 /*%PAGE																*/
 /**
@@ -145,10 +139,6 @@ __execv_a(const char *path, char *const argv[])
 int 
 __execve_a(const char *path, char *const argv[], char *const envp[])
 {
-int i;
-printf("%s:%d - %s\n",__func__,__LINE__,__getEstring1_a(path));
-for (i = 0; argv[i] != NULL; i++)
-    printf("i. %s\n",i,argv[i]);
 	return execve((const char *) __getEstring1_a(path), argv, envp);
 }
 
@@ -208,6 +198,7 @@ __getlogin_a(void)
 char *
 __getpass_a(const char *prompt)
 { 
+    extern char *getpass(const char *);
 	char *p;
 
 	p = getpass((const char *) __getEstring1_a(prompt));

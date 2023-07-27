@@ -11,10 +11,6 @@
  *	- vprintf
  *	- vsprintf
  * 
- * Compile	:	GEN_PRAGMA_EXPORT - generate PRAGMA statements to
- * Options						export these entry points from the
- *								DLL								
- *															
  * Notes	:	1) All the procedures are name "__xxxxxxxx_a" where
  *				xxxxxxxx is the name of the standard C run-time
  *				function name. Unless otherwise noted, all functions
@@ -41,15 +37,14 @@
 #endif
 #include "global_a.h"
 
-#ifdef GEN_PRAGMA_EXPORT
- #pragma export(__fprintf_a)
- #pragma export(__printf_a)
- #pragma export(__snprintf_a)
- #pragma export(__sprintf_a)
- #pragma export(__vfprintf_a)
- #pragma export(__vprintf_a)
- #pragma export(__vsprintf_a)
-#endif
+#pragma export(__fprintf_a)
+#pragma export(__printf_a)
+#pragma export(__snprintf_a)
+#pragma export(__sprintf_a)
+#pragma export(__vfprintf_a)
+#pragma export(__vprintf_a)
+#pragma export(__vsnprintf_a)
+#pragma export(__vsprintf_a)
 
 #pragma map(__fprintf_a, "\174\174A00152")
 #pragma map(__printf_a, "\174\174A00118")

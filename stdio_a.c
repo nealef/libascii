@@ -2,10 +2,6 @@
  * @file stdio_a.c
  * @brief Contains ASCII-to-EBCDIC front end to the stdio functions.
  * 
- * Compile	:	GEN_PRAGMA_EXPORT - generate PRAGMA statements to
- * Options						export these entry points from the
- *								DLL								
- *															
  * Notes	:	All the procedures are name "__xxxxxxxx_a" where
  *				xxxxxxxx is the name of the standard C run-time
  *				function name. Unless otherwise noted, all functions
@@ -31,55 +27,54 @@
 #include <sys/time.h>
 #include "global_a.h"
  
-#ifdef GEN_PRAGMA_EXPORT
- #pragma export(__cuserid_a)
- #pragma export(__fdopen_a)
- #pragma export(__fgets_a)
- #pragma export(__fopen_a)
- #pragma export(__fputc_a)
- #pragma export(__fprintf_a)
- #pragma export(__fputs_a)
- #pragma export(__fread_a)
- #pragma export(__freopen_a)
- #pragma export(__fwrite_a)
- #pragma export(__fwrite_allascii_a)
- #pragma export(__getc_a)
- #pragma export(__getc_ascii_a)
- #pragma export(__getopt_a)
- #pragma export(__gets_a)
- #pragma export(__perror_a)
- #pragma export(__popen_a)
- #pragma export(__putc_a)
- #pragma export(__putchar_a)
- #pragma export(__puts_a)
- #pragma export(__remove_a)
- #pragma export(__rename_a)
- #pragma export(__setvbuf_a)
- #pragma export(__tempnam_a)
- #pragma export(__tmpnam_a)
-#endif
+#pragma export(__cuserid_a)
+#pragma export(__fdopen_a)
+#pragma export(__fgets_a)
+#pragma export(__fopen_a)
+#pragma export(__fputc_a)
+#pragma export(__fputs_a)
+#pragma export(__fread_a)
+#pragma export(__freopen_a)
+#pragma export(__fwrite_a)
+#pragma export(__fwrite_allascii_a)
+#pragma export(__getc_a)
+#pragma export(__getc_ascii_a)
+#pragma export(__getopt_a)
+#pragma export(__gets_a)
+#pragma export(__perror_a)
+#pragma export(__popen_a)
+#pragma export(__putc_a)
+#pragma export(__putchar_a)
+#pragma export(__puts_a)
+#pragma export(__remove_a)
+#pragma export(__rename_a)
+#pragma export(__setvbuf_a)
+#pragma export(__tempnam_a)
+#pragma export(__tmpnam_a)
+#pragma export(__ungetc_a)
+
 #pragma map(__cuserid_a, "\174\174A00248")
 #pragma map(__fdopen_a, "\174\174A00241")
 #pragma map(__fgets_a, "\174\174A00305")
 #pragma map(__fopen_a, "\174\174A00246")
-#pragma map(__fprintf_a, "\174\174A00152")
 #pragma map(__fputc_a, "\174\174A00302")
 #pragma map(__fputs_a, "\174\174A00307")
 #pragma map(__fread_a, "\174\174A00308")
 #pragma map(__freopen_a, "\174\174A00247")
 #pragma map(__fwrite_a, "\174\174A00309")
-#pragma map(__getc_a, "\174\174A00306")
+#pragma map(__getc_a, "GETCOVRA")
 #pragma map(__getopt_a, "\174\174A00190")
 #pragma map(__gets_a, "\174\174A00306")
 #pragma map(__perror_a, "\174\174A00178")
+#pragma map(__popen_a, "\174\174A00249")
 #pragma map(__putc_a, "\174\174A00146")
 #pragma map(__putchar_a, "\174\174A00303")
 #pragma map(__puts_a, "\174\174A00304")
-#pragma map(__popen_a, "\174\174A00249")
 #pragma map(__remove_a, "\174\174A00243")
 #pragma map(__rename_a, "\174\174A00244")
 #pragma map(__tempnam_a, "\174\174A00250")
 #pragma map(__tmpnam_a, "\174\174A00245")
+#pragma map(__ungetc_a, "UGTCOVRA")
  
 #define WRKBUFSIZ _POSIX_PATH_MAX
  
@@ -94,6 +89,7 @@
 char *
 __cuserid_a(char *s)
 {
+    extern char *cuserid(char *);
     char *tmp_out;
 
     if (s) {
@@ -121,7 +117,6 @@ __fdopen_a(int fildes, const char *options)
 char *
 __fgets_a(char *string, int n, FILE *stream)
 {
-printf("%s:%d - %d\n",__func__,__LINE__,__isAsciiStream(stream));
 	if (stream==stdin) {  /* assume the input is ebcdic */
 		if (fgets(string, n, stream) != NULL) {
 			__toascii_a(string, string);
@@ -155,26 +150,16 @@ __fopen_a(const char *path, const char *mode)
 {
     FILE *fp;
     struct stat info;
+    const char *ePath = __getEstring1_a(path);
+    char *new = NULL;
 
-	fp = fopen((const char *) __getEstring1_a(path),
-	           (const char *) __getEstring2_a(mode));
+    if (stat(ePath, &info) == -1)
+        new = (char *) ePath;
 
-    if (fp != NULL) {
-        if (stat(path, &info) == 0) {
-            if (S_ISREG(info.st_mode)) {
-                if ((info.st_useraudit == iso8859) || 
-                    (info.st_useraudit == mixAsc))
-                    fp->__fp->__fcb_ascii = 1;
-                else
-                    fp->__fp->__fcb_ascii = 0;
-            } if (strcmp(path, "/dev/tty") == 0)
-                fp->__fp->__fcb_ascii = 0;
-            else
-                fp->__fp->__fcb_ascii = 1;
-        }
-    }
+	fp = fopen(ePath, (const char *) __getEstring2_a(mode));
+    if (fp != NULL)
+        __insertFD(fileno(fp), new);
 
-printf("%s:%d - opened %s ASCII: %d\n",__func__,__LINE__,__getEstring_a(path),fp->__fp->__fcb_ascii);
     return fp;
 
 }
@@ -187,8 +172,8 @@ printf("%s:%d - opened %s ASCII: %d\n",__func__,__LINE__,__getEstring_a(path),fp
 int 
 __fputc_a(int c, FILE *stream)
 {
-	char input_char[]=" ";      /* 2 bytes work area : ' '+'\0' */
-	input_char[0]=c;
+	char input_char[] = " ";      /* 2 bytes work area : ' '+'\0' */
+	input_char[0] = c;
     if (!__isAsciiStream(stream)) 
 		__toebcdic_a(input_char, input_char);
 	return (fputc(input_char[0], stream));
@@ -238,13 +223,12 @@ FILE *
 __freopen_a( const char *path, const char *mode, FILE *stream)
 {
     FILE *fp;
-    int tag = stream->__fp->__fcb_ascii;
-
 
 	fp = freopen((char const *) __getEstring1_a(path),
 	             (char const *) __getEstring2_a(mode),
 				   stream);
-    fp->__fp->__fcb_ascii = tag;
+    if (fp != NULL)
+        __insertFD(fileno(fp), NULL);
 
     return fp;
 }
@@ -286,10 +270,9 @@ __getc_a(FILE *stream)
 {
 	char input_char[]=" ";      /* 2 bytes work area : ' '+'\0' */
  
-	input_char[0]=getc(stream);
+	input_char[0] = getc(stream);
 	if (input_char[0] == 0xff)
 		return(-1);
-printf("%s:%d - %c (%02x) %d\n",__func__,__LINE__,input_char[0],input_char[0],__isAsciiStream(stream));
 	if (!__isAsciiStream(stream)) 
 		__toascii_a(input_char, input_char);
 	return (input_char[0]);
@@ -308,6 +291,21 @@ __getc_ascii_a(FILE *stream)
 	return (input_char[0]);
 }
 
+/**
+ * @brief Unget a character from a stream
+ *
+ */
+int 
+__ungetc_a(int c, FILE *stream)
+{
+	char input_char[]=" ";      /* 2 bytes work area : ' '+'\0' */
+ 
+	input_char[0] = c;
+	if (!__isAsciiStream(stream)) 
+		__toebcdic_a(input_char, input_char);
+	return (ungetc(input_char[0], stream));
+}
+ 
 /**
  * @brief Get options from an array of arguments
  *

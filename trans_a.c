@@ -16,10 +16,6 @@
  *	- __toasciilen_a
  *	- __toebcdiclen_a
  *
- * Compile	:	GEN_PRAGMA_EXPORT - generate PRAGMA statements to
- * Options						export these entry points from the
- *								DLL								
- *															
  * Notes	:	All the procedures are name "__xxxxxxxx_a" where
  *				xxxxxxxx is the name of the standard C run-time
  *				function name. Unless otherwise noted, all functions
@@ -40,20 +36,6 @@
 #include <errno.h>
 #include <sys/stat.h>
 #include "global_a.h"
-
-#ifdef GEN_PRAGMA_EXPORT
-#pragma export(__argvtoascii_a)
-#pragma export(__argvtoebcdic_a)
-#pragma export(__getAstring1_a)
-#pragma export(__getAstring2_a)
-#pragma export(__getEstring1_a)
-#pragma export(__getEstring2_a)
-#pragma export(__getEstring3_a)
-#pragma export(__getEstring4_a)
-#pragma export(__toascii_a)
-#pragma export(__toasciilen_a)
-#pragma export(__toebcdic_a)
-#endif
 
 #define cmsTTY 0x00030000
 
@@ -106,12 +88,12 @@ __getAstring1_a(const char *einstr1)
 {
 	ATHD_t *myathdp;
 	myathdp = athdp();
-    myathdp->estring1_a = NULL;
     if (einstr1 != NULL) {
         strncpy(myathdp->estring1_a,einstr1,MAXSTRING_a);
         __toascii_a(myathdp->estring1_a,myathdp->estring1_a);
+	    return myathdp->estring1_a;
     }
-	return myathdp->estring1_a;
+    return NULL;
 }
 
 /**
@@ -126,12 +108,12 @@ __getAstring2_a(const char *einstr2)
 {
 	ATHD_t *myathdp;
 	myathdp = athdp();
-    myathdp->estring2_a = NULL;
     if (einstr2 != NULL) {
         strncpy(myathdp->estring2_a,einstr2,MAXSTRING_a);
         __toascii_a(myathdp->estring2_a,myathdp->estring2_a);
+	    return myathdp->estring2_a;
     }
-	return myathdp->estring2_a;
+    return NULL;
 }
 
 /**
@@ -146,12 +128,12 @@ __getEstring1_a(const char *ainstr1)
 {
 	ATHD_t *myathdp;
 	myathdp = athdp();
-    myathdp->estring1_a = NULL;
     if (ainstr1 != NULL) {
         strncpy(myathdp->estring1_a,ainstr1,MAXSTRING_a);
         __toebcdic_a(myathdp->estring1_a,myathdp->estring1_a);
+	    return myathdp->estring1_a;
     }
-	return myathdp->estring1_a;
+    return NULL;
 }
 
 /**
@@ -166,12 +148,12 @@ __getEstring2_a(const char *ainstr2)
 {
 	ATHD_t *myathdp;
 	myathdp = athdp();
-    myathdp->estring2_a = NULL;
     if (ainstr2 != NULL) {
         strncpy(myathdp->estring2_a,ainstr2,MAXSTRING_a);
         __toebcdic_a(myathdp->estring2_a,myathdp->estring2_a);
+	    return myathdp->estring2_a;
     }
-	return myathdp->estring2_a;
+    return NULL;
 }
 
 /**
@@ -186,12 +168,12 @@ __getEstring3_a(const char *ainstr3)
 {
 	ATHD_t *myathdp;
 	myathdp = athdp();
-    myathdp->estring3_a = NULL;
     if (ainstr3 != NULL) {
         strncpy(myathdp->estring3_a,ainstr3,MAXSTRING_a);
         __toebcdic_a(myathdp->estring3_a,myathdp->estring3_a);
+	    return myathdp->estring3_a;
     }
-	return myathdp->estring3_a;
+    return NULL;
 }
 
 /**
@@ -206,12 +188,12 @@ __getEstring4_a(const char *ainstr4)
 {
 	ATHD_t *myathdp;
 	myathdp = athdp();
-    myathdp->estring4_a = NULL;
     if (ainstr4 != NULL) {
         strncpy(myathdp->estring4_a,ainstr4,MAXSTRING_a);
         __toebcdic_a(myathdp->estring4_a,myathdp->estring4_a);
+	    return myathdp->estring4_a;
     }
-	return myathdp->estring4_a;
+    return NULL;
 }
 
 /**

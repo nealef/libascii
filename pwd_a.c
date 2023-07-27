@@ -2,10 +2,6 @@
  * @file pwd_a.c
  * @brief Contains ASCII-to-EBCDIC front end to the pwd.h functions.
  * 
- * Compile	:	GEN_PRAGMA_EXPORT - generate PRAGMA statements to
- * Options						export these entry points from the
- *								DLL								
- *															
  * Notes	:	All the procedures are name "__xxxxxxxx_a" where
  *				xxxxxxxx is the name of the standard C run-time
  *				function name. Unless otherwise noted, all functions
@@ -23,10 +19,13 @@
 #include <pwd.h>
 #include "global_a.h"
 
-#ifdef GEN_PRAGMA_EXPORT
 #pragma export(__getpwent_a)
 #pragma export(__getpwnam_a)
 #pragma export(__getpwuid_a)
+
+#ifdef __VM__
+#pragma export(setpwent)
+#pragma export(endpwent)
 #endif
 
 #pragma map(__getpwent_a, "\174\174A00264")

@@ -2,10 +2,6 @@
  * @file ctest_a.c
  * @brief Contains ASCII-to-EBCDIC front end to the ctest functions.
  * 
- * Compile	:	GEN_PRAGMA_EXPORT - generate PRAGMA statements to
- * Options						export these entry points from the
- *								DLL								
- *															
  * Notes	:	All the procedures are name "__xxxxxxxx_a" where
  *				xxxxxxxx is the name of the standard C run-time
  *				function name. Unless otherwise noted, all functions
@@ -22,11 +18,9 @@
 #include <ctest.h>
 #include "global_a.h"
 
-#ifdef GEN_PRAGMA_EXPORT
 #pragma export(__cdump_a)
 #pragma export(__ctrace_a)
 #pragma export(__csnap_a)
-#endif
 
 #pragma map(__cdump_a, "\174\174A00360")
 #pragma map(__csnap_a, "\174\174A00361")

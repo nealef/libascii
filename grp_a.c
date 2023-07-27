@@ -2,10 +2,6 @@
  * @file grp_a.c
  * @brief Contains ASCII-to-EBCDIC front end to the grp.h functions. 
  * 
- * Compile	:	GEN_PRAGMA_EXPORT - generate PRAGMA statements to
- * Options						export these entry points from the
- *								DLL								
- *															
  * Notes	:	All the procedures are name "__xxxxxxxx_a" where
  *				xxxxxxxx is the name of the standard C run-time
  *				function name. Unless otherwise noted, all functions
@@ -22,10 +18,8 @@
 #include <grp.h>
 #include "global_a.h"
 
-#ifdef GEN_PRAGMA_EXPORT
 #pragma export(__getgrgid_a)
 #pragma export(__getgrnam_a)
-#endif
 
 #pragma map(__getgrgid_a, "\174\174A00254")
 #pragma map(__getgrnam_a, "\174\174A00255")
@@ -40,7 +34,7 @@ __getgrgid_a(gid_t gid)
 	char 	**curr;
 	struct	group *grp;
 
-	grp = getgrnam(gid);
+	grp = getgrgid(gid);
 	if ((grp) != NULL) {
 		__toascii_a(grp->gr_name,grp->gr_name);
 		for (curr=grp->gr_mem; (*curr) != NULL; curr++)

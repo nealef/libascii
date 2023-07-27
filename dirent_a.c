@@ -2,10 +2,6 @@
  * @file dirent_a.c
  * @brief Contains ASCII-to-EBCDIC front end to the dirent functions.
  * 
- * Compile	:	GEN_PRAGMA_EXPORT - generate PRAGMA statements to
- * Options						export these entry points from the
- *								DLL								
- *															
  * Notes	:	All the procedures are name "__xxxxxxxx_a" where
  *				xxxxxxxx is the name of the standard C run-time
  *				function name. Unless otherwise noted, all functions
@@ -22,10 +18,8 @@
 #include <dirent.h>
 #include "global_a.h"
  
-#ifdef GEN_PRAGMA_EXPORT
 #pragma export(__opendir_a)
 #pragma export(__readdir_a)
-#endif
  
 #pragma map(__opendir_a, "\174\174A00371")
 #pragma map(__readdir_a, "\174\174A00372")

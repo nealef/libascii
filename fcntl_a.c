@@ -2,10 +2,6 @@
  * @file fcntl_a.c
  * @brief Contains ASCII-to-EBCDIC front end to the fcntl functions.
  * 
- * Compile	:	GEN_PRAGMA_EXPORT - generate PRAGMA statements to
- * Options						export these entry points from the
- *								DLL								
- *															
  * Notes	:	All the procedures are name "__xxxxxxxx_a" where
  *				xxxxxxxx is the name of the standard C run-time
  *				function name. Unless otherwise noted, all functions
@@ -23,10 +19,8 @@
 #include <fcntl.h>
 #include "global_a.h"
  
-#ifdef GEN_PRAGMA_EXPORT
 #pragma export(__creat_a)
 #pragma export(__open_a)
-#endif
  
 #pragma map(__creat_a, "\174\174A00143")
 #pragma map(__open_a, "\174\174A00144")
@@ -49,10 +43,11 @@ int
 __creat_a(const char* path, mode_t mode)
 {
     int fd;
+    char *ePath = __getEstring1_a(ePath);
 
-	fd = creat(__getEstring1_a(path), mode);
-
-    __insertFD(fd);
+	fd = creat(ePath, mode);
+    if (fd != -1) 
+        __insertFD(fd, ePath);
 
     return fd;
 }
@@ -71,16 +66,20 @@ __open_a(const char *path, int oflag, ...)
 	va_list ap;
 	mode_t tmpmode;
 	int fd;
+    char *ePath = __getEstring1_a(path);
  
 	if (oflag & O_CREAT) {
 		va_start(ap, oflag);
 		tmpmode = va_arg(ap, mode_t);
-		fd = open((const char *) __getEstring1_a(path), oflag, tmpmode);
+		fd = open((const char *) ePath, oflag, tmpmode);
+        if (fd != -1)
+            __insertFD(fd, ePath);
 		va_end(ap);
-	} else
-		fd = open((const char *) __getEstring1_a(path), oflag);
-
-    __insertFD(fd);
+	} else {
+		fd = open((const char *) ePath, oflag);
+        if (fd != -1)
+            __insertFD(fd, NULL);
+    }
 
 	return(fd);
 }

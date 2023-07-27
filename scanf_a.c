@@ -13,10 +13,6 @@
 /*					- scanf 							 			*/
 /*					- sscanf 										*/
 /*																	*/
-/* Compile	:	GEN_PRAGMA_EXPORT - generate PRAGMA statements to	*/
-/* Options						export these entry points from the	*/
-/*								DLL									*/
-/*																	*/
 /* Notes	:	1) All the procedures are name "__xxxxxxxx_a" where	*/
 /*				xxxxxxxx is the name of the standard C run-time		*/
 /*				function name. Unless otherwise noted, all functions*/
@@ -36,12 +32,10 @@
 #include <errno.h>
 #include "global_a.h"
 
-#ifdef GEN_PRAGMA_EXPORT
 #pragma export(__fscanf_a)
 #pragma export(__scanf_a)
 #pragma export(__sscanf_a)
 #pragma export(__vsscanf_a)
-#endif
 
 #pragma map(__fscanf_a, "\174\174A00159")
 #pragma map(__scanf_a, "\174\174A00160")

@@ -2,10 +2,6 @@
  * @file math_a.c
  * @brief Contains BFP/DFP routines for math.h
  * 
- * Compile	:	GEN_PRAGMA_EXPORT - generate PRAGMA statements to
- * Options						export these entry points from the
- *								DLL								
- *															
  * Notes	:	All the procedures are name "__xxxxxxxx_a" where
  *				xxxxxxxx is the name of the standard C run-time
  *				function name. Unless otherwise noted, all functions
@@ -34,11 +30,11 @@
 #define SIGNBIT     5
 #define ISNAN       6
            
-#ifdef GEN_PRAGMA_EXPORT
 #pragma export(__class_a)
 #pragma export(__round_a)
 #pragma export(__roundf_a)
 #pragma export(__roundl_a)
+#if 0
 #pragma export(__lround_a)
 #pragma export(__lroundf_a)
 #pragma export(__lroundl_a)
@@ -48,9 +44,9 @@
 #endif
 
 #pragma map(__class_a, "\174\174CLASSB")
-#pragma map (__round_a, "\174\174ROUN\174B")
-#pragma map (__roundf_a, "\174\174ROUNFB")   
-#pragma map (__roundl_a, "\174\174ROUNLB")   
+#pragma map(__round_a, "\174\174ROUN\174B")
+#pragma map(__roundf_a, "\174\174ROUNFB")   
+#pragma map(__roundl_a, "\174\174ROUNLB")   
 
 /*%PAGE																*/
 /**

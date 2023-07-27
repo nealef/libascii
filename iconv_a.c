@@ -2,10 +2,6 @@
  * @file iconv_a.c
  * @brief Contains ASCII-to-EBCDIC front end to the iconv functions.
  * 
- * Compile	:	GEN_PRAGMA_EXPORT - generate PRAGMA statements to
- * Options						export these entry points from the
- *								DLL								
- *															
  * Notes	:	All the procedures are name "__xxxxxxxx_a" where
  *				xxxxxxxx is the name of the standard C run-time
  *				function name. Unless otherwise noted, all functions
@@ -22,9 +18,8 @@
 #include <iconv.h>
 #include "global_a.h"
 
-#ifdef GEN_PRAGMA_EXPORT
 #pragma export(__iconv_open_a)
-#endif
+#pragma map(__iconv_open_a, "\174\174A00119")
  
 /*%PAGE																*/
 /**

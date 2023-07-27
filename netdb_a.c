@@ -2,10 +2,6 @@
  * @file 
  * @brief 
  * 
- * Compile	:	GEN_PRAGMA_EXPORT - generate PRAGMA statements to
- * Options						export these entry points from the
- *								DLL								
- *															
  * Notes	:	All the procedures are name "__xxxxxxxx_a" where
  *				xxxxxxxx is the name of the standard C run-time
  *				function name. Unless otherwise noted, all functions
@@ -26,11 +22,9 @@
 #include <netdb.h>
 #include "global_a.h"
  
-#ifdef GEN_PRAGMA_EXPORT
 #pragma export(__gethostbyaddr_a)
 #pragma export(__gethostbyname_a)
 #pragma export(__getservbyname_a)
-#endif
 
 extern void Convert_hostent_to_ascii(struct hostent *);
  

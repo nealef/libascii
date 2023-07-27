@@ -98,6 +98,11 @@ ATHD_t * __initASCIIlib_a()
 	/* Set flag indiating athd initialization completed.  */
 	athdptr->initdone = 1;
 
+    /* Prepare FD translate entries for stdin/out/err */
+    __insertFD(fileno(stdin), NULL);
+    __insertFD(fileno(stdout), NULL);
+    __insertFD(fileno(stderr), NULL);
+
 	return(athdptr);
 }
 

@@ -2,10 +2,6 @@
  * @file dynit_a.c
  * @brief Contains ASCII-to-EBCDIC front end to the dynit.h functions.
  * 
- * Compile	:	GEN_PRAGMA_EXPORT - generate PRAGMA statements to
- * Options						export these entry points from the
- *								DLL								
- *															
  * Notes	:	All the procedures are name "__xxxxxxxx_a" where
  *				xxxxxxxx is the name of the standard C run-time
  *				function name. Unless otherwise noted, all functions
@@ -21,10 +17,10 @@
 
 #include <dynit.h>
 #include "global_a.h"
+
+#pragma map(__dynalloc_a, "\174\174A00385")
  
-#ifdef GEN_PRAGMA_EXPORT
 #pragma export(__dynalloc_a)
-#endif
  
 /*%PAGE																*/
 /********************************************************************/

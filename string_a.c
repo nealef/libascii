@@ -2,10 +2,6 @@
  * @file string_a.c
  * @brief Contains ASCII-to-EBCDIC front end to the string/string funtions.
  * 
- * Compile	:	GEN_PRAGMA_EXPORT - generate PRAGMA statements to
- * Options						export these entry points from the
- *								DLL								
- *															
  * Notes	:	All the procedures are name "__xxxxxxxx_a" where
  *				xxxxxxxx is the name of the standard C run-time
  *				function name. Unless otherwise noted, all functions
@@ -21,18 +17,19 @@
 
 #include <string.h>
 #include <strings.h>
+#include <errno.h>
 #include "global_a.h"
 
-#ifdef GEN_PRAGMA_EXPORT
 #pragma export(__strcasecmp_a)
 #pragma export(__strcoll_a)
 #pragma export(__strerror_a)
+#pragma export(__strerror_r_a)
 #pragma export(__strncasecmp_a)
-#endif
 
+#pragma map(__strcasecmp_a, "\174\174A00292")
 #pragma map(__strcoll_a, "\174\174A00049")
 #pragma map(__strerror_a, "\174\174A00177")
-#pragma map(__strcasecmp_a, "\174\174A00292")
+#pragma map(__strerror_r_a, "\174\174A00470")
 #pragma map(__strncasecmp_a, "\174\174A00293")
 
 /*%PAGE																*/
@@ -81,4 +78,24 @@ __strerror_a(int errnum)
 	p = strerror(errnum);
 	__toascii_a(p,p);
 	return(p);
+}
+
+/**
+ * @brief String representation of error (re-entrant)
+ */
+int
+__strerror_r_a(int errnum, char *strerrbuf, size_t buflen)
+{
+	char   *p;
+    size_t len; 
+
+	p = strerror(errnum);
+    if (strlen(p) > buflen) {
+        len = buflen - 1;
+        errno = ERANGE;
+    } else 
+        len = buflen;
+    memset(strerrbuf, 0, len);
+	__toasciilen_a(strerrbuf, p, (int) len);
+	return 0;
 }

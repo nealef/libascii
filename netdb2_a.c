@@ -2,10 +2,6 @@
  * @file netdb2_a.c
  * @brief Contains ASCII-to-EBCDIC front end to the netdb functions for OE Sockets format calls
  * 
- * Compile	:	GEN_PRAGMA_EXPORT - generate PRAGMA statements to
- * Options						export these entry points from the
- *								DLL								
- *															
  * Notes	:	All the procedures are name "__xxxxxxxx_a" where
  *				xxxxxxxx is the name of the standard C run-time
  *				function name. Unless otherwise noted, all functions
@@ -23,7 +19,6 @@
 #include <netdb.h>
 #include "global_a.h"
  
-#ifdef GEN_PRAGMA_EXPORT
 #pragma export(__gai_strerror_a)
 #pragma export(__getaddrinfo_a)
 #pragma export(__gethostbyaddr_a)
@@ -32,7 +27,6 @@
 #pragma export(__getprotobyname_a)
 #pragma export(__getservbyname_a)
 #pragma export(__getservbyport_a)
-#endif
 
 #pragma map(__gai_strerror_a, "\174\174A00208")
 #pragma map(__getaddrinfo_a, "\174\174A00082")

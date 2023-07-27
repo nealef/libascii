@@ -23,9 +23,11 @@
 #include <stdarg.h>
 #include <stdio.h>
  
+#pragma map(__getc_a, "GETCOVRA")
 #pragma map(__write_a, "WRITOVRA")
 #pragma map(__read_a, "READOVRA")
 #pragma map(__close_a, "CLOSOVRA")
+#pragma map(__ungetc_a, "UGTCOVRA")
 
 /*%PAGE																*/
 /**
@@ -79,31 +81,11 @@ __getc_a(FILE *s)
 }
 
 /**
- * @brief Override fgetc() API
+ * @brief Override ungetc() API
  *
  */
 int
-__fgetc_a(FILE *s)
+__ungetc_a(int c, FILE *s)
 {
-    return fgetc(s);
-}
-
-/**
- * @brief Override putchar() API
- *
- */
-int
-__putchar_a(int x)
-{
-    return putchar(x);
-}
-
-/**
- * @brief Override putc() API
- *
- */
-int
-__putc_a(int x, FILE *s)
-{
-    return putc(x, s);
+    return ungetc(c, s);
 }
