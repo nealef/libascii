@@ -175,7 +175,7 @@ set_tag_fd_binary(int fd)
     fdxl_t *fdxl;
     for (fdxl = myathdp->fdxl; fdxl != NULL; fdxl = fdxl->next) {
         if (fd == fdxl->fd) {
-            fdxl->ascii = 1;
+            fdxl->textbin = 0;
             return;
         }
     }
@@ -191,7 +191,7 @@ set_tag_fd_text(int fd)
     fdxl_t *fdxl;
     for (fdxl = myathdp->fdxl; fdxl != NULL; fdxl = fdxl->next) {
         if (fd == fdxl->fd) {
-            fdxl->ascii = 0;
+            fdxl->textbin = 1;
             return;
         }
     }

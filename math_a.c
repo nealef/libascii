@@ -55,19 +55,29 @@
 int
 __class_a(const long double h, int size, int test)
 {
-    uint64_t dataClass = 0;
-    static uint64_t tstFinite = 0xfc0,
+    uint32_t dataClass = 0;
+    static uint32_t tstFinite = 0xfc0,
              tstInfinite = 0x030, 
              tstNormal = 0x300,
              tstSubNormal = 0x0c0,
              tstNan = 0x00f,
              tstZero = 0xc00,
              tstSign = 0x555;
-    static int resInfinite = FP_INFINITE,
-               resNaN = FP_NAN,
-               resNormal = FP_NORMAL,
-               resSubNormal = FP_SUBNORMAL,
-               resZero = FP_ZERO;
+
+    __asm__ ("TSTFIN   EQU    X'FC0'\n"     /* Same as the tst... above but for assembler */
+             "TSTINF   EQU    X'030'\n"
+             "TSTNRM   EQU    X'300'\n"
+             "TSTSUB   EQU    X'0C0'\n"
+             "TSTNAN   EQU    X'00F'\n"
+             "TSTZER   EQU    X'C00'\n"
+             "TSTSGN   EQU    X'555'\n");
+
+    __asm__ ("RESINF   EQU    7\n"          /* Assembler version of FP_INFINITE */
+             "RESNAN   EQU    10\n"         /* ... FP_NAN */
+             "RESNRM   EQU    1\n"          /* ... FP_NORMAL */
+             "RESSUB   EQU    5\n"          /* ... FP_SUBNORMAL */
+             "RESZRO   EQU    3\n");        /* ... FP_ZERO */
+
     int res = 0;
 
     switch(size) {
@@ -75,33 +85,29 @@ __class_a(const long double h, int size, int test)
         switch(test) {
         case FPCLASSIFY :
             __asm__ ("         LXEBR 0,0\n"
-                     "         TCEB  0,%1\n"
+                     "         LHI   9,TSTINF\n"
+                     "         TCEB  0,0(,9)\n"
                      "         JNZ   NOTINF\n"
-                     "         L     %0,%2\n"
+                     "         LHI   %0,RESINF\n"
                      "         J     FPCLASSF\n"
-                     "NOTINF   TCEB  0,%3\n"
+                     "NOTINF   LHI   9,TSTNAN\n"
+                     "         TCEB  0,0(,9)\n"
                      "         JNZ   NOTNANF\n"
-                     "         L     %0,%4\n"
+                     "         LHI   %0,RESNAN\n"
                      "         J     FPCLASSF\n"
-                     "NOTNANF  TCEB  0,%5\n"
+                     "NOTNANF  LHI   9,TSTNRM\n"
+                     "         TCEB  0,0(,9)\n"
                      "         JNZ   NOTNRMF\n"
-                     "         L     %0,%6\n"
+                     "         LHI   %0,RESNRM\n"
                      "         J     FPCLASSF\n"
-                     "NOTNRMF  TCEB  0,%7\n"
+                     "NOTNRMF  LHI   9,TSTSUB\n"
+                     "         TCEB  0,0(,9)\n"
                      "         JNZ   NOTSUBF\n"
-                     "         L     %0,%8\n"
+                     "         LHI   %0,RESSUB\n"
                      "         J     FPCLASSF\n"
-                     "NOTSUBF  TCEB  0,%9\n"
-                     "         JNZ   FPCLASSF\n"
-                     "         L     %0,%10\n"
+                     "NOTSUBF  LHI   %0,RESZRO\n"
                      "FPCLASSF EQU   *\n"
-                     : "=r" (res)
-                     : "m" (tstInfinite), "m" (resInfinite),
-                       "m" (tstNan), "m" (resNaN),
-                       "m" (tstNormal), "m" (resNormal),
-                       "m" (tstSubNormal), "m" (resSubNormal),
-                       "m" (tstZero), "m" (resZero)
-                     : "cc");
+                     : "=r" (res) : : "cc", "9");
             break;
         case ISFINITE :
             dataClass = tstFinite;
@@ -120,45 +126,42 @@ __class_a(const long double h, int size, int test)
             break;
         }
         if (dataClass != 0) {
-            asm ("  LEXBR 0,0\n"
-                 "  TCEB  0,%1\n"
-                 "  JZ    CLASSAF\n"
-                 "  LHI   %0,1\n"
-                 "CLASSAF EQU *\n"
-                 : "=r" (res) : "m" (dataClass) : "cc");
+            __asm__ ("  LEXBR 0,0\n"
+                     "  L     9,%1\n"
+                     "  TCEB  0,0(,9)\n"
+                     "  JZ    CLASSAF\n"
+                     "  LHI   %0,1\n"
+                     "CLASSAF EQU *\n"
+                     : "=r" (res) : "m" (dataClass) : "cc", "9");
         }
         break;
     case 8 : 
         switch(test) {
         case FPCLASSIFY :
             __asm__ ("         LDXBR 0,0\n"
-                     "         TCDB  0,%1\n"
+                     "         LHI   9,TSTINF\n"
+                     "         TCDB  0,0(,9)\n"
                      "         JNZ   NOTIND\n"
-                     "         L     %0,%2\n"
+                     "         LHI   %0,RESINF\n"
                      "         J     FPCLASSD\n"
-                     "NOTIND   TCDB  0,%3\n"
+                     "NOTIND   LHI   9,TSTNAN\n"
+                     "         TCDB  0,0(,9)\n"
                      "         JNZ   NOTNAND\n"
-                     "         L     %0,%4\n"
+                     "         LHI   %0,RESNAN\n"
                      "         J     FPCLASSD\n"
-                     "NOTNAND  TCDB  0,%5\n"
+                     "NOTNAND  LHI   9,TSTNRM\n"
+                     "         TCDB  0,0(,9)\n"
                      "         JNZ   NOTNRMD\n"
-                     "         L     %0,%6\n"
+                     "         LHI   %0,RESNRM\n"
                      "         J     FPCLASSD\n"
-                     "NOTNRMD  TCDB  0,%7\n"
+                     "NOTNRMD  LHI   9,TSTSUB\n"
+                     "         TCDB  0,0(,9)\n"
                      "         JNZ   NOTSUBD\n"
-                     "         L     %0,%9\n"
+                     "         LHI   %0,RESSUB\n"
                      "         J     FPCLASSD\n"
-                     "NOTSUBD  TCDB  0,%9\n"
-                     "         JNZ   FPCLASSD\n"
-                     "         L     %0,%10\n"
+                     "NOTSUBD  LHI   %0,RESZRO\n"
                      "FPCLASSD EQU   *\n"
-                     : "=r" (res)
-                     : "m" (tstInfinite), "m" (resInfinite),
-                       "m" (tstNan), "m" (resNaN),
-                       "m" (tstNormal), "m" (resNormal),
-                       "m" (tstSubNormal), "m" (resSubNormal),
-                       "m" (tstZero), "m" (resZero)
-                     : "cc");
+                     : "=r" (res) : : "cc", "9");
             break;
         case ISFINITE :
             dataClass = tstFinite;
@@ -177,44 +180,41 @@ __class_a(const long double h, int size, int test)
             break;
         }
         if (dataClass != 0) {
-            asm ("  LDXBR 0,0\n"
-                 "  TCDB  0,%1\n"
-                 "  JZ    CLASSAD\n"
-                 "  LHI   %0,1\n"
-                 "CLASSAD EQU *\n"
-                 : "=r" (res) : "m" (dataClass) : "cc");
+            __asm__ ("  LDXBR 0,0\n"
+                     "  L     9,%1\n"   
+                     "  TCDB  0,0(,9)\n"
+                     "  JZ    CLASSAD\n"
+                     "  LHI   %0,1\n"
+                     "CLASSAD EQU *\n"
+                     : "=r" (res) : "m" (dataClass) : "cc", "9");
         }
         break;
     case 16 : 
         switch(test) {
         case FPCLASSIFY :
-            __asm__ ("         TCXB  0,%1\n"
+            __asm__ ("         LHI   9,TSTINF\n"
+                     "         TCXB  0,0(,9)\n"
                      "         JNZ   NOTINX\n"
-                     "         L     %0,%2\n"
+                     "         LHI   %0,RESINF\n"
                      "         J     FPCLASSX\n"
-                     "NOTINX   TCXB  0,%3\n"
+                     "NOTINX   LHI   9,TSTNAN\n"
+                     "         TCXB  0,0(,9)\n"
                      "         JNZ   NOTNANX\n"
-                     "         L     %0,%4\n"
+                     "         LHI   %0,RESNAN\n"
                      "         J     FPCLASSX\n"
-                     "NOTNANX  TCXB  0,%5\n"
+                     "NOTNANX  LHI   9,TSTNRM\n"
+                     "         TCXB  0,0(,9)\n"
                      "         JNZ   NOTNRMX\n"
-                     "         L     %0,%6\n"
+                     "         LHI   %0,RESNRM\n"
                      "         J     FPCLASSX\n"
-                     "NOTNRMX  TCXB  0,%7\n"
+                     "NOTNRMX  LHI   9,TSTSUB\n"
+                     "         TCXB  0,0(,9)\n"
                      "         JNZ   NOTSUBX\n"
-                     "         L     %0,%8\n"
+                     "         LHI   %0,RESSUB\n"
                      "         J     FPCLASSX\n"
-                     "NOTSUBX  TCXB  0,%9\n"
-                     "         JNZ   FPCLASSX\n"
-                     "         L     %0,%10\n"
+                     "NOTSUBX  LHI   %0,RESZRO\n"
                      "FPCLASSX EQU   *\n"
-                     : "=r" (res)
-                     : "m" (tstInfinite), "m" (resInfinite),
-                       "m" (tstNan), "m" (resNaN),
-                       "m" (tstNormal), "m" (resNormal),
-                       "m" (tstSubNormal), "m" (resSubNormal),
-                       "m" (tstZero), "m" (resZero)
-                     : "cc");
+                     : "=r" (res) : : "cc", "9");
             break;
         case ISFINITE :
             dataClass = tstFinite;
@@ -233,11 +233,12 @@ __class_a(const long double h, int size, int test)
             break;
         }
         if (dataClass != 0) {
-            asm ("  TCXB  0,%1\n"
-                 "  JZ    CLASSAX\n"
-                 "  LHI   %0,1\n"
-                 "CLASSAX EQU *\n"
-                 : "=r" (res) : "m" (dataClass) : "cc");
+            __asm__ ("  L     9,%1\n"
+                     "  TCXB  0,0(,9)\n"
+                     "  JZ    CLASSAX\n"
+                     "  LHI   %0,1\n"
+                     "CLASSAX EQU *\n"
+                     : "=r" (res) : "m" (dataClass) : "cc", "9");
         }
         break;
     }

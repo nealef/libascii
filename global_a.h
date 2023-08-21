@@ -62,6 +62,7 @@ struct FDXL {
     void *next;             /* Next entry in list */
     int  fd;                /* File descriptor */
     int  ascii;             /* Translation required flag */
+    int  textbin;           /* Text/Binary mode */
 };
 
 typedef struct FDXL fdxl_t;
@@ -134,7 +135,8 @@ __insertFD(int fd, char *path)
     fdxl_t *fdxl = myathdp->fdxl,
            *last = NULL;
     struct stat info;
-    int tag = 0;
+    int tag = 0,
+        mode = 1;
 
     if (fstat(fd, &info) == 0) {
         if (S_ISREG(info.st_mode)) {
