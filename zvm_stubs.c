@@ -27,6 +27,7 @@
 #include <pthread.h>
 #include <_Ccsid.h>
 #include <_Nascii.h>
+
 #include "global_a.h"
 
 #pragma export(__ae_autoconvert_state_a)
@@ -45,6 +46,7 @@
 #pragma export(__sched_yield)
 #pragma export(set_tag_fd_binary)
 #pragma export(set_tag_fd_text)
+#pragma export(set_tag_fd_text_ro)
 #pragma export(__setgrent)
 #pragma export(__setgroups)
 #pragma export(__setlogmask)
@@ -118,6 +120,11 @@ static const ccsidTable_t ccsidTable[] = {
     {0, NULL}
 };
 
+void
+init_z_handler()
+{
+}
+ 
 /*%PAGE																*/
 /**
  * @brief Set/query conversion state
@@ -186,6 +193,22 @@ set_tag_fd_binary(int fd)
  */
 void
 set_tag_fd_text(int fd)
+{
+	ATHD_t *myathdp = athdp();
+    fdxl_t *fdxl;
+    for (fdxl = myathdp->fdxl; fdxl != NULL; fdxl = fdxl->next) {
+        if (fd == fdxl->fd) {
+            fdxl->textbin = 1;
+            return;
+        }
+    }
+}
+
+/**
+ * @brief set conversion mode to text
+ */
+void
+set_tag_fd_text_ro(int fd)
 {
 	ATHD_t *myathdp = athdp();
     fdxl_t *fdxl;

@@ -29,6 +29,7 @@
  
 #pragma export(__cuserid_a)
 #pragma export(__fdopen_a)
+#pragma export(__fgetc_a)
 #pragma export(__fgets_a)
 #pragma export(__fopen_a)
 #pragma export(__fputc_a)
@@ -40,6 +41,7 @@
 #pragma export(__getc_a)
 #pragma export(__getc_ascii_a)
 #pragma export(__getopt_a)
+#pragma export(__getchar_a)
 #pragma export(__gets_a)
 #pragma export(__perror_a)
 #pragma export(__popen_a)
@@ -55,6 +57,7 @@
 
 #pragma map(__cuserid_a, "\174\174A00248")
 #pragma map(__fdopen_a, "\174\174A00241")
+#pragma map(__fgetc_a, "FGETOVRA")
 #pragma map(__fgets_a, "\174\174A00305")
 #pragma map(__fopen_a, "\174\174A00246")
 #pragma map(__fputc_a, "\174\174A00302")
@@ -63,6 +66,7 @@
 #pragma map(__freopen_a, "\174\174A00247")
 #pragma map(__fwrite_a, "\174\174A00309")
 #pragma map(__getc_a, "GETCOVRA")
+#pragma map(__getchar_a, "GTCHOVRA")
 #pragma map(__getopt_a, "\174\174A00190")
 #pragma map(__gets_a, "\174\174A00306")
 #pragma map(__perror_a, "\174\174A00178")
@@ -74,7 +78,7 @@
 #pragma map(__rename_a, "\174\174A00244")
 #pragma map(__tempnam_a, "\174\174A00250")
 #pragma map(__tmpnam_a, "\174\174A00245")
-#pragma map(__ungetc_a, "UGTCOVRA")
+#pragma map(__ungetc_a, "UGETCOVRA")
  
 #define WRKBUFSIZ _POSIX_PATH_MAX
  
@@ -240,7 +244,7 @@ size_t
 __fwrite_a(const void *buffer, size_t size, size_t count, FILE *stream)
 {
 	size_t	bytes;
-	if (__isAsciiStream(stream)) {
+	if (!__isAsciiStream(stream)) {
         char *out = __alloca(size * count);
 		__toebcdiclen_a((char *) out, (char *) buffer, size * count);
         bytes = fwrite(out, size, count, stream);
@@ -263,7 +267,6 @@ __fwrite_allascii_a(const void *buffer, size_t size, size_t count, FILE *stream)
 /**
  * @brief Read a character from a stream
  *
- * Assume EBCDIC input if stdin
  */
 int 
 __getc_a(FILE *stream)
@@ -276,6 +279,28 @@ __getc_a(FILE *stream)
 	if (!__isAsciiStream(stream)) 
 		__toascii_a(input_char, input_char);
 	return (input_char[0]);
+}
+ 
+/**
+ * @brief Read a character from a STDIN
+ *
+ */
+int 
+__getchar_a(FILE *stream)
+{
+	return __getc_a(stdin);
+ 
+}
+ 
+/**
+ * @brief Read a character from a stream
+ *
+ */
+int 
+__fgetc_a(FILE *stream)
+{
+	return __getc_a(stream);
+ 
 }
  
 /**

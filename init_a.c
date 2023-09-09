@@ -20,6 +20,8 @@
 #include <errno.h>
 #include "global_a.h"
 
+#pragma export(__initASCIIlib_a)
+
 char version[20]="libascii V2.0.0";
 pthread_key_t *keyptr = (pthread_key_t *) NULL;
 pthread_key_t key;
@@ -58,7 +60,8 @@ getathdp()
  * @brief Main initialization for all ASCII library routines
  *
  */
-ATHD_t * __initASCIIlib_a()
+ATHD_t * 
+__initASCIIlib_a()
 {
 	ATHD_t *athdptr;
 	int athdsz;
