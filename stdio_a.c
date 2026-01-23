@@ -127,22 +127,21 @@ __fgets_a(char *string, int n, FILE *stream)
 			return(string);
 		} else
 			return(NULL);
-	} else {
-		int i, len;
-		fpos_t pos;
-		fgetpos(stream, &pos);
-		if (fgets(string, n, stream) != NULL) {
-			len=strlen(string);
-			for (i=0; string[i]!=0x0A && i<len; i++);
-			if (i==len || string[i+1]=='\0')
-				return(string);
-			else {
-				fsetpos(stream, &pos); /* reset the stream position */
-				fgets(string, i+2, stream); /* gets again but only for i+1 bytes */
-				return(string);
-			}
-		}
-		return(NULL);
+	} else if (!__isAsciiStream(stream)) {
+        if (fgets(string, n, stream) != NULL) {
+            __toascii_a(string, string);
+            return(string);
+        } else
+            return(NULL);
+    } else {
+        int i;
+        for (i = 0; i < (n - 1) && !feof(stream) && ferror(stream); i++) {
+            string[i] = fgetc(stream);
+            if (string[i] == 0x0a || string[i] == 0)
+                return(string);
+        }
+		string[n] = 0;
+        return(string);
 	}
 }
  

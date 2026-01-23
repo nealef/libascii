@@ -88,7 +88,7 @@ struct tm *
 __gmtime_r_a(const time_t *timer, struct tm *res)
 {
     struct tm *t = gmtime(timer);
-    memcpy(res, t, sizeof(res));
+    memcpy(res, t, sizeof(*res));
 	return res;
 }
 
@@ -108,7 +108,7 @@ struct tm *
 __localtime_r_a(const time_t *timer, struct tm *res)
 {
     struct tm *t = localtime(timer);
-    memcpy(res, t, sizeof(res));
+    memcpy(res, t, sizeof(*res));
 	return res;
 }
 

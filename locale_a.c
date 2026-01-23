@@ -167,15 +167,16 @@ __setlocale_a(int category, const char *locale)
 		c = setlocale(category, __getEstring1_a(locale));
 	} else
 		c = setlocale(category, NULL);
-	if (c)
+	if (c) {
 		__toascii_a(myathdp->estring1_a,c);
-    else
-        myathdp->estring1_a = NULL;
-	return myathdp->estring1_a;
+        locale_e = myathdp->estring1_a;
+    } else
+        locale_e = NULL;
+	return locale_e;
 }
 /*%PAGE                                                             */
 /**
- * @brief Termination routine for the locale ibrary routines. 
+ * @brief Termination routine for the locale library routines. 
  *
  * This routine runs when the thread is terminated to clean up 
  * resources obtained by the terminating thread.

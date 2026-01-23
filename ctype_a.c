@@ -18,6 +18,7 @@
 #pragma export(__isalnum_a)
 #pragma export(__isalpha_a)
 #pragma export(__isascii_a)
+#pragma export(__isblank_a)
 #pragma export(__iscntrl_a)
 #pragma export(__isdigit_a)
 #pragma export(__isgraph_a)
@@ -33,6 +34,7 @@
 #pragma map(__isalnum_a, "\174\174A00210")
 #pragma map(__isalpha_a, "\174\174A00211")
 #pragma map(__isascii_a, "\174\174ISASC")
+#pragma map(__isblank_a, "\174\174A00212")
 #pragma map(__iscntrl_a, "\174\174A00213")
 #pragma map(__isdigit_a, "\174\174A00214")
 #pragma map(__isgraph_a, "\174\174A00215")
@@ -98,36 +100,63 @@ __isascii_a(int c)
 	return((c & 0x80) == 0);
 }
 
+/**
+ * @brief Test whether character is a blank
+ */
 int
-__iscntrl_a( int c ) 
+__isblank_a(int c)
+{
+	return( c == ASC_SP || c == ASC_HT );
+}
+
+/**
+ * @brief Test whether character is a control character
+ */
+int
+__iscntrl_a(int c) 
 {
 	return( (c >= '\x00' && c <= '\x1F') || (c == '\x7F') );   
 } 
 
+/**
+ * @brief Test whether character is a digit
+ */
 int
 __isdigit_a( int c )
 {
 	return( c >= ASC_0 && c <= ASC_9 );
 }
 
+/**
+ * @brief Test whether character is a graphical character
+ */
 int
 __isgraph_a( int c)
 {
 	return( (c > '\x20' && c < '\x7F'));  
 }
 
+/**
+ * @brief Test whether character is a lower case character
+ */
 int
 __islower_a( int c )
 {
 	return( c >= ASC_a && c <= ASC_z );
 }
 
+/**
+ * @brief Test whether character is a printable character
+ */
 int
 __isprint_a( int c)
 {
 	return( (c >= '\x20' && c < '\x7F'));  
 }
 
+/**
+ * @brief Test whether character is a punctuation character
+ */
 int
 __ispunct_a( int c)
 {

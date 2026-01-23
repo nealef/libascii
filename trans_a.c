@@ -325,10 +325,10 @@ init_trans_a()
 	myathdp = athdp();  /* get pointer to ATHD thread structure */
 	myathdp->cd_EtoA = iconv_open("ISO8859-1", "IBM-1047"); 
 	if (myathdp->cd_EtoA == (iconv_t) -1)
-		__panic_a("Iconv open failed for 1047\n");
+		__panic_a("Iconv open failed for 1047");
     myathdp->cd_AtoE = iconv_open("IBM-1047", "ISO8859-1"); 
 	if (myathdp->cd_AtoE == (iconv_t)-1)
-		__panic_a("Iconv open failed for 8859\n");
+		__panic_a("Iconv open failed for 8859");
 
 	/* -- Get space for local buffers                             */
 	/* -- Set estringx_a ptrs in ATHD                             */

@@ -74,6 +74,8 @@ __initASCIIlib_a()
 	/* Assume the current thread doesn't have a valid athd data area. */
 	athdsz = sizeof(ATHD_t);
 	athdptr = (ATHD_t *) calloc(1,athdsz); 
+    if (athdptr == NULL) 
+        __panic_a("Error allocating thread pointer data area\n");
 	if ((pthread_setspecific(key, (void *) athdptr) == -1) &&
 	    ( errno == EINVAL) ) {
 		/*
@@ -147,5 +149,9 @@ __panic_a(char *reason)
 	int	S_errno2 = __errno2();
 
 	__cdump(reason);
-	perror(reason);
+	fprintf(stderr, "Reason - %s\n");
+    if (S_errno != 0)
+        fprintf(stderr, "Error - %s (%d)\n",strerror(S_errno),S_errno);
+    fflush(stderr);
+    exit(S_errno);
 }
