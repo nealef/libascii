@@ -1,34 +1,31 @@
-/********************************************************************/
-/*																	*/
-/* Name		: 	nl_typ_a.c  											*/	
-/*                                                                  */
-/* Copyright:   Licensed Materials - Property of IBM.               */
-/*              (C) Copyright IBM Corp. 1997, 1998 .                */
-/*              All rights reserved.                                */
-/* 																	*/
-/* Function :	Contains ASCII-to-EBCDIC front end to the			*/
-/*			  	nl_types functions (catopen and catgets).  			*/
-/* 																	*/
-/* Compile	:	GEN_PRAGMA_EXPORT - generate PRAGMA statements to	*/
-/* Options						export these entry points from the	*/
-/*								DLL									*/
-/*																	*/
-/* Notes	:	All the procedures are name "__xxxxxxxx_a" where	*/
-/*				xxxxxxxx is the name of the standard C run-time		*/
-/*				function name. Unless otherwise noted, all functions*/
-/* 				take the same argument,produce the same output and	*/
-/*				return the same values as the standard functions.	*/
-/*																	*/
-/********************************************************************/
+/**
+ * @file nl_typ_a.c
+ * @brief Contains ASCII-to-EBCDIC front end to the nl_types functions (catopen and catgets).
+ * 
+ * Notes	:	All the procedures are name "__xxxxxxxx_a" where
+ *				xxxxxxxx is the name of the standard C run-time
+ *				function name. Unless otherwise noted, all functions
+ * 				take the same argument,produce the same output and
+ *				return the same values as the standard functions.
+ */
+
+/********************************************************************
+ * Copyright:   Licensed Materials - Property of IBM.               *
+ *              (C) Copyright IBM Corp. 1997.                       *
+ *              All rights reserved.                                *
+ ********************************************************************/
+
  
 #include <nl_types.h>
+#include <errno.h>
 #include "global_a.h"
  
-#ifdef GEN_PRAGMA_EXPORT
- #pragma export(__catopen_a)
- #pragma export(__catgets_a)
-#endif
+#pragma export(__catopen_a)
+#pragma export(__catgets_a)
  
+#pragma map(catopen, "\174\174A00191")
+#pragma map(catgets, "\174\174A00083")
+
 /*%PAGE																*/
 /********************************************************************/
 /*																	*/
@@ -36,14 +33,24 @@
 /*																	*/
 /********************************************************************/
 
-nl_catd __catopen_a(const char *path, int oflags)
+/**
+ * @brief 
+ */
+nl_catd 
+__catopen_a(const char *path, int oflags)
 {
+    errno = ENOENT;
+    return ((void *) -1);
+#if 0
 	return catopen((const char *) __getEstring1_a(path) , oflags);
+#endif
 }
 
-char *__catgets_a(nl_catd catd, int set_id, int msg_id, const char *string)
+char *
+__catgets_a(nl_catd catd, int set_id, int msg_id, const char *string)
 {
-
+    return((char *) string);
+#if 0
 	char *msgP;
 
 	if (msgP = catgets(catd, set_id, msg_id, string))
@@ -53,4 +60,5 @@ char *__catgets_a(nl_catd catd, int set_id, int msg_id, const char *string)
 		}
 	else
 		return((char *) string);
+#endif
 }

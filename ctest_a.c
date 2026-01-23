@@ -1,6 +1,6 @@
 /**
- * @file langin_a.c
- * @brief Contains ASCII-to-EBCDIC front end to the langinfo functions.
+ * @file ctest_a.c
+ * @brief Contains ASCII-to-EBCDIC front end to the ctest functions.
  * 
  * Notes	:	All the procedures are name "__xxxxxxxx_a" where
  *				xxxxxxxx is the name of the standard C run-time
@@ -15,21 +15,41 @@
  *              All rights reserved.                                *
  ********************************************************************/
 
-#pragma langlvl( extended )
- 
-#include <langinfo.h>
+#include <ctest.h>
 #include "global_a.h"
- 
-#pragma export(__nl_langinfo_a)
- 
-#pragma map(__nl_langinfo_a, "\174\174A00077")
+
+#pragma export(__cdump_a)
+#pragma export(__ctrace_a)
+#pragma export(__csnap_a)
+
+#pragma map(__cdump_a, "\174\174A00360")
+#pragma map(__csnap_a, "\174\174A00361")
+#pragma map(__ctrace_a, "\174\174A00363")
 
 /*%PAGE																*/
 /**
- * @brief Retrieve Locale Information
+ * @brief Produce dump of the process
  */
-char *
-__nl_langinfo_a(nl_item item)
+int 
+__cdump_a(char *s)
 {
-	return __getAstring1_a( nl_langinfo(item) );
+	return (cdump(__getEstring1_a(s)));
+}
+
+/**
+ * @brief Produce condensed dump of the process
+ */
+int
+__csnap_a(char *s)
+{
+	return (csnap(__getEstring1_a(s)));
+}
+
+/**
+ * @brief Produce strack trace of the process
+ */
+int
+__ctrace_a(char *s)
+{
+	return (ctrace(__getEstring1_a(s)));
 }

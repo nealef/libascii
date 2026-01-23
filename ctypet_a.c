@@ -1,23 +1,14 @@
-/********************************************************************/
-/*																	*/
-/* Name		: 	ctypet_a.c 											*/	
-/*                                                                  */
-/* Copyright:   Licensed Materials - Property of IBM.               */
-/*              (C) Copyright IBM Corp. 1997.                       */
-/*              All rights reserved.                                */
-/*              US Government Users Restricted Rights - Use,        */
-/*              duplication or disclosure restricted by GSA ADP     */
-/*              Schedule Contract with IBM Corp.                    */
-/* 																	*/
-/* Function :	Contains tables used by ctype functions				*/
-/* 																	*/
-/* Compile	:	None												*/
-/* Options															*/
-/*								DLL									*/
-/*																	*/
-/* Notes	:	None												*/
-/*																	*/ 
-/********************************************************************/
+/**
+ * @file ctypet_a.c
+ * @brief Contains tables used by ctype functions
+ * 
+ */
+
+/********************************************************************
+ * Copyright:   Licensed Materials - Property of IBM.               *
+ *              (C) Copyright IBM Corp. 1997.                       *
+ *              All rights reserved.                                *
+ ********************************************************************/
 
 /* Need to include _Ascii_a.h to force definition of _ISCNTRL_A, functions */
 

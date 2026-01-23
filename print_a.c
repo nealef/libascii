@@ -1,38 +1,32 @@
-/********************************************************************/
-/*																	*/
-/* Name		: 	print_a.c 											*/	
-/*                                                                  */
-/* Copyright:   Licensed Materials - Property of IBM.               */
-/*              (C) Copyright IBM Corp. 1997, 1998.                 */
-/*              All rights reserved.                                */
-/* 																	*/
-/* Function :	Contains ACSII-to-EBCDIC front end to the			*/
-/*			  	following functions: 								*/
-/*					- fprintf										*/
-/*					- printf										*/
-/*					- sprintf										*/
-/*					- vfprintf										*/
-/*					- vprintf										*/
-/*					- vsprintf										*/	
-/*																	*/
-/* Compile	:	GEN_PRAGMA_EXPORT - generate PRAGMA statements to	*/
-/* Options						export these entry points from the	*/
-/*								DLL									*/
-/* 				GEN_IEEE_FP   - compiles assuming all floating		*/
-/* 								point input/output is in IEEE 		*/
-/*								format; otherwise in standard OS390	*/
-/*								floating point format.				*/
-/*																	*/
-/* Notes	:	1) All the procedures are name "__xxxxxxxx_a" where	*/
-/*				xxxxxxxx is the name of the standard C run-time		*/
-/*				function name. Unless otherwise noted, all functions*/
-/* 				take the same argument,produce the same output and	*/
-/*				return the same values as the standard functions.	*/
-/*																	*/ 
-/*				2) The %n$ form of the conversion specifiers are 	*/
-/*				not supported by any of the printf variations.		*/
-/*																	*/ 
-/********************************************************************/
+/**
+ * @file print_a.c
+ * @brief [xx]printf front-ends
+ *
+ * Contains ACSII-to-EBCDIC front end to the following functions:
+ *	- fprintf
+ *	- printf
+ *	- snprintf
+ *	- sprintf
+ *	- vfprintf
+ *	- vprintf
+ *	- vsprintf
+ * 
+ * Notes	:	1) All the procedures are name "__xxxxxxxx_a" where
+ *				xxxxxxxx is the name of the standard C run-time
+ *				function name. Unless otherwise noted, all functions
+ * 				take the same argument,produce the same output and
+ *				return the same values as the standard functions.
+ *
+ *				2) The %n$ form of the conversion specifiers are
+ *				not supported by any of the printf variations.
+ */
+
+/********************************************************************
+ * Copyright:   Licensed Materials - Property of IBM.               *
+ *              (C) Copyright IBM Corp. 1997.                       *
+ *              All rights reserved.                                *
+ ********************************************************************/
+
 #include <stdlib.h>
 #include <stdarg.h>
 #include <stdio.h>
@@ -43,36 +37,43 @@
 #endif
 #include "global_a.h"
 
-#ifdef GEN_PRAGMA_EXPORT
- #pragma export(__fprintf_a)
- #pragma export(__printf_a)
- #pragma export(__sprintf_a)
- #pragma export(__vfprintf_a)
- #pragma export(__vprintf_a)
- #pragma export(__vsprintf_a)
-#endif
+#pragma export(__fprintf_a)
+#pragma export(__printf_a)
+#pragma export(__snprintf_a)
+#pragma export(__sprintf_a)
+#pragma export(__vfprintf_a)
+#pragma export(__vprintf_a)
+#pragma export(__vsnprintf_a)
+#pragma export(__vsprintf_a)
 
-typedef	int		BOOL;
+#pragma map(__fprintf_a, "\174\174A00152")
+#pragma map(__printf_a, "\174\174A00118")
+#pragma map(__snprintf_a, "\174\174A00433")
+#pragma map(__sprintf_a, "\174\174A00153")
+#pragma map(__vfprintf_a, "\174\174A00154")
+#pragma map(__vprintf_a, "\174\174A00155")
+#pragma map(__vsnprintf_a, "\174\174A00434")
+#pragma map(__vsprintf_a, "\174\174A00156")
+
+typedef	_Bool BOOL;
+
 #define	FALSE	0
 #define	TRUE	!FALSE
 
-/*********************************************************************
-*
-*	Proto-type statements   
-*
-*********************************************************************/
+/**
+ *	Proto-type statements   
+ */
 static int CvrtToEbcdic(char *, size_t, char *, va_list);
 
 /*%PAGE																*/
-/*********************************************************************
-*
-*	Name   	 :	__fprintf_a  
-*	Function :	ASCII front-end to fprintf
-*	Notes    : 	Assumes EBCDIC output for stdout and stderr and			
-*				ASCII for others.   
-*
-*********************************************************************/
-int __fprintf_a(FILE *stream, const char *format, ...)
+/**
+ * @brief ASCII front-end to fprintf
+ *
+ * Note: Assumes EBCDIC output for stdout and stderr and ASCII for others.   
+ *
+ */
+int 
+__fprintf_a(FILE *stream, const char *format, ...)
 {
 	char	buffer[MAXSTRING_a];	/* use MAXSTRING_a for size     */
 	va_list	parg;			/* ptr to variable arg					*/
@@ -83,22 +84,21 @@ int __fprintf_a(FILE *stream, const char *format, ...)
 	va_end(parg);
 	if (result > 0) { 
 		/* Translate to ASCII if not stdxxx							*/
-		if (stream!=stderr && stream!=stdout)
+		if (stream != stderr && stream != stdout)
 			__toasciilen_a(buffer,buffer,result);
-		fwrite(buffer,1,result,stream);
-		}
+		result = fwrite(buffer,1,result,stream);
+    }
 	return(result);
 }
 
-/*%PAGE																*/
-/*********************************************************************
-*
-*	Name   	 :	__printf_a  
-*	Function :	ASCII front-end to printf
-*	Notes    :	Assumes EBCDIC output
-*
-*********************************************************************/
-int __printf_a(const char *format, ...)
+/**
+ * @brief ASCII front-end to printf
+ *
+ * Note: Assumes EBCDIC output
+ *
+ */
+int 
+__printf_a(const char *format, ...)
 {
 	char	buffer[MAXSTRING_a];	/* use MAXSTRING_a for size     */
 	va_list	parg;			/* ptr to variable arg					*/
@@ -109,19 +109,18 @@ int __printf_a(const char *format, ...)
 	result = CvrtToEbcdic(buffer,MAXSTRING_a,(char *)format,parg);
 	va_end(parg);
 	if (result > 0)
-		fwrite(buffer,1,result,stdout);
+		result = fwrite(buffer,1,result,stdout);
 	return(result);
 }
 
-/*%PAGE																*/
-/*********************************************************************
-*
-*	Name   	 :	__sprintf_a  
-*	Function :	ASCII front-end to sprintf
-*	Notes 	 :	Assumes ASCII output
-*
-*********************************************************************/
-int __sprintf_a(char *buffer, const char *format, ...)
+/**
+ * @brief ASCII front-end to sprintf
+ *
+ * Note: Assumes ASCII output
+ *
+ */
+int 
+__sprintf_a(char *buffer, const char *format, ...)
 {
 	va_list	parg;			/* ptr to variable arg					*/
 	int		result;			/* number of chars printed				*/
@@ -134,16 +133,34 @@ int __sprintf_a(char *buffer, const char *format, ...)
 	return(result);
 }
 
-/*%PAGE																*/
-/*********************************************************************
-*
-*	Name   	 :	__vfprintf_a  
-*	Function :	ASCII front-end to vfprintf
-*	Notes    :	Assumes EBCDIC output for stdout and stderr and			
-*				ASCII for others.   
-*
-*********************************************************************/
-int __vfprintf_a(FILE *stream, const char *format, va_list parg)
+/**
+ * @brief ASCII front-end to snprintf
+ *
+ * Note: Assumes ASCII output
+ *
+ */
+int 
+__snprintf_a(char *buffer, size_t maxlen, const char *format, ...)
+{
+	va_list	parg;			/* ptr to variable arg					*/
+	int		result;			/* number of chars printed				*/
+
+	va_start(parg, format);	
+	result = CvrtToEbcdic(buffer,maxlen,(char *)format,parg);
+	va_end(parg);
+	if (result >= 0)
+		__toasciilen_a(buffer,buffer,result);
+	return(result);
+}
+
+/**
+ * @brief ASCII front-end to vfprintf
+ *
+ * Note: Assumes EBCDIC output for stdout and stderr and ASCII for others.   
+ *
+ */
+int 
+__vfprintf_a(FILE *stream, const char *format, va_list parg)
 {
 	char	buffer[MAXSTRING_a];	/* use MAXSTRING_a for size     */
 	int		result;			/* number of chars printed				*/
@@ -151,22 +168,21 @@ int __vfprintf_a(FILE *stream, const char *format, va_list parg)
 	result = CvrtToEbcdic(buffer,MAXSTRING_a,(char *)format,parg);
 	if (result > 0) {
 		/* Translate to ASCII if not stdxxx							*/
-		if (stream!=stderr && stream!=stdout)
+		if (stream != stderr && stream != stdout)
 			__toasciilen_a(buffer,buffer,result);
-		fwrite(buffer,1,result,stream);
-		}
+		result = fwrite(buffer,1,result,stream);
+	}
 	return(result);
 }
 
-/*%PAGE																*/
-/*********************************************************************
-*
-*	Name   	 :	__vprintf_a  
-*	Function :	ASCII front-end to vprintf
-*	Notes    :	Assumes EBCDIC output
-*
-*********************************************************************/
-int __vprintf_a(const char *format, va_list parg)
+/**
+ * @brief ASCII front-end to vprintf
+ *
+ * Note: Assumes EBCDIC output
+ *
+ */
+int 
+__vprintf_a(const char *format, va_list parg)
 {
 	char	buffer[MAXSTRING_a];	/* use MAXSTRING_a for size     */
 	int		result;			/* number of chars printed				*/
@@ -174,19 +190,18 @@ int __vprintf_a(const char *format, va_list parg)
 
 	result = CvrtToEbcdic(buffer,MAXSTRING_a,(char *)format,parg);
 	if (result > 0) 
-		fwrite(buffer,1,result,stdout);
+		result = fwrite(buffer,1,result,stdout);
 	return(result);
 }
 
-/*%PAGE																*/
-/*********************************************************************
-*
-*	Name   	 :	__vsprintf_a  
-*	Function :	ASCII front-end to vsprintf
-*	Notes    :	Assumes ASCII output
-*
-*********************************************************************/
-int __vsprintf_a(char *buffer, const char *format, va_list parg)
+/**
+ * @brief ASCII front-end to vsprintf
+ *
+ * Note: Assumes ASCII output
+ *
+ */
+int 
+__vsprintf_a(char *buffer, const char *format, va_list parg)
 {
 	int		result;			/* number of chars printed				*/
 
@@ -196,27 +211,39 @@ int __vsprintf_a(char *buffer, const char *format, va_list parg)
 	return(result);
 }
 
+/**
+ * @brief ASCII front-end to vsnprintf
+ *
+ * Note: Assumes ASCII output
+ *
+ */
+int 
+__vsnprintf_a(char *buffer, size_t maxlen, const char *format, va_list parg)
+{
+	int		result;			/* number of chars printed				*/
+
+	result = CvrtToEbcdic(buffer,maxlen,(char *)format,parg);
+	if (result > 0) 
+		__toasciilen_a(buffer,buffer,result);
+	return(result);
+}
+
 /*%PAGE																*/
-/*********************************************************************
-*
-*	Name   	 :	CvrtToEbcdic
-*	Function :	Converts format string and all character string
-*				arguments to the printf-familiy functions from
-*				ASCII to EBCDIC then performs the requested service.
-*	Inputs   :	char *buffer   		- output buffer containing ebcdic
-*									  buffer
-*				size_t buffersize 	- maximum size of buffer
-*				char eformat[]	 	- ascii input buffer   
-*				parg           		- optional argument porinter
-*	Output	 :	char *buffer   		- output buffer containing ebcdic
-*									  buffer
-*	Returns	 :	Integer value containing the number of bytes  
-*				transmitted excluding the null terminating byte or 
-*				a negative value in the case of an error.
-*
-*********************************************************************/
-int CvrtToEbcdic(char *buffer, size_t buffersize, 
-                 char *format, va_list parg)
+/**
+ * @brief Converts format string and all character string
+ * arguments to the printf-familiy functions from
+ * ASCII to EBCDIC then performs the requested service.
+ *
+ * @param buffer output buffer containing EBCDIC buffer
+ * @param buffersize maximum size of buffer
+ * @param eformat ASCII input buffer   
+ * @param optional argument porinter
+ * @returns Integer value containing the number of bytes  
+ *			transmitted excluding the null terminating byte or 
+ *			a negative value in the case of an error.
+ */
+int 
+CvrtToEbcdic(char *buffer, size_t buffersize, char *format, va_list parg)
  {
 	char 		*ip, *op, *argstrg, *eformatp;
 	char 		nchar[MAXSTRING_a];
@@ -421,52 +448,27 @@ int CvrtToEbcdic(char *buffer, size_t buffersize,
 				switch (typeQual) {
 					case 'h':
 						argdbl = va_arg(parg,double);
-#ifdef GEN_IEEE_FP
-						memcpy(&tmpIEEEflt,&argdbl,sizeof(float));
-						ccp = sprintf(op, fmtstring, flt2nat(tmpIEEEflt));
-#else
 						ccp = sprintf(op,fmtstring,argdbl);
 						if (ccp == -1) {
 							sw_error = TRUE;
 							continue;
 						}
-#endif
 						break;
 					case 'L':
 						argld = va_arg(parg,long double);
-#ifdef GEN_IEEE_FP
-						memcpy(&tmpIEEEdbl,&argld,sizeof(double));
-						tmp390dbl = dbl2nat(tmpIEEEdbl);
-						/* dbl2nat returns either 0 or MAX390 or MIN390 if conversion to native format fail.  Pass tmpIEEEdbl to dbl2str then, dbl2str handles the boundary case better than dbl2nat */
-						if (tmp390dbl==0.0 || tmp390dbl==MAX390 || tmp390dbl==MIN390)
-							ccp = strlen(dbl2str(op,fmtstring,tmpIEEEdbl));
-						else
-							ccp = sprintf(op,fmtstring,tmp390dbl);
-#else
 						ccp = sprintf(op,fmtstring,argld);
 						if (ccp == -1) {
 							sw_error = TRUE;
 							continue;
 						}
-#endif
 						break;
 					default:
 						argdbl = va_arg(parg, double);
-#ifdef GEN_IEEE_FP
-						memcpy(&tmpIEEEdbl,&argdbl,sizeof(double));
-						tmp390dbl = dbl2nat(tmpIEEEdbl);
-						/* dbl2nat returns either 0 or MAX390 or MIN390 if conversion to native format fail.  Pass tmpIEEEdbl to dbl2str then, dbl2str handles the boundary case better than dbl2nat */
-						if (tmp390dbl==0.0 || tmp390dbl==MAX390 || tmp390dbl==MIN390)
-							ccp = strlen(dbl2str(op,fmtstring,tmpIEEEdbl));
-						else
-							ccp = sprintf(op,fmtstring,tmp390dbl);
-#else
 						ccp = sprintf(op,fmtstring,argdbl);
 						if (ccp == -1) {
 							sw_error = TRUE;
 							continue;
 						}
-#endif
 						break;
 					}
 				break;

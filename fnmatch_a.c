@@ -1,6 +1,6 @@
 /**
- * @file langin_a.c
- * @brief Contains ASCII-to-EBCDIC front end to the langinfo functions.
+ * @file fnmatch_a.c
+ * @brief Contains ASCII-to-EBCDIC front end to the fnmatch functions.
  * 
  * Notes	:	All the procedures are name "__xxxxxxxx_a" where
  *				xxxxxxxx is the name of the standard C run-time
@@ -15,21 +15,20 @@
  *              All rights reserved.                                *
  ********************************************************************/
 
-#pragma langlvl( extended )
- 
-#include <langinfo.h>
+#include <fnmatch.h>
 #include "global_a.h"
- 
-#pragma export(__nl_langinfo_a)
- 
-#pragma map(__nl_langinfo_a, "\174\174A00077")
+
+#pragma export(__fnmatch_a)
+
+#pragma map(__fnmatch_a, "\174\174A00037")
 
 /*%PAGE																*/
 /**
- * @brief Retrieve Locale Information
+ * @brief Match File Name or Path Name
  */
-char *
-__nl_langinfo_a(nl_item item)
+int 
+__fnmatch_a(const char *pattern, const char *string, int flags)
 {
-	return __getAstring1_a( nl_langinfo(item) );
+	return fnmatch((const char *) __getEstring1_a(pattern), 
+                   (const char *) __getEstring2_a(string), flags);
 }
