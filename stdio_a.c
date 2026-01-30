@@ -135,12 +135,24 @@ __fgets_a(char *string, int n, FILE *stream)
             return(NULL);
     } else {
         int i;
-        for (i = 0; i < (n - 1) && !feof(stream) && ferror(stream); i++) {
+        string[0] = 0;
+        for (i = 0; i < (n - 1) && !feof(stream) && !ferror(stream); i++) {
             string[i] = fgetc(stream);
-            if (string[i] == 0x0a || string[i] == 0)
+            if (feof(stream)) {
+                string[i] = 0;
                 return(string);
+            } else if (string[i] == 0) {
+                return(string);
+            } else if (string[i] == 0x0a) {
+                if (++i < n)
+                    string[i] = 0;
+                return(string);
+            }
         }
-		string[n] = 0;
+        if (feof(stream)) 
+            return(NULL);
+
+		string[i] = 0;
         return(string);
 	}
 }
@@ -191,6 +203,7 @@ int
 __fputs_a(char *fstring, FILE *stream)
 {
 	int tmpint;
+
 	/* if stdout or stderr, then convert string to ebcdic, else
        preserve in ascii 											*/
     if (!__isAsciiStream(stream)) {
