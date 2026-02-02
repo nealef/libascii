@@ -22,13 +22,16 @@
 #define DUMP_DATA(t, d, l) do {                         \
        int x,y;		                                    \
        char *c = (char *) (d);		                    \
-       printf("%s -\n",t);		                        \
+       fprintf(stderr, "%s - %p.%x\n", t, c, (l));	    \
        for (x = 0; x < (l);) {		                    \
            for (y = 0; y < 16 & x < (l); x++, y++)		\
-               printf("%02x ",c[x]);		            \
-           printf("\n");		                        \
+               fprintf(stderr, "%02x ",c[x]);		    \
+           fputc('\n', stderr);                         \
        }		                                        \
    } while (0)
+
+#define DEBUG_PRINT(fmt, ...)   \
+        fprintf(stderr, "%s:%d - " fmt"\n", __func__, __LINE__, __VA_ARGS__)
 
 /**
  * We use the audit field of the stat structure to determine
