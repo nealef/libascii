@@ -167,6 +167,7 @@ __getenv_a(const char *varname)
 	tmpenvp = getenv(tmpvarnamep);
 	if (tmpenvp == NULL)
 		return(tmpenvp);
+
 	myathdp = athdp();  /* get pointer to athd thread structure */
 	if (myathdp->getenvlen < (varlen = 1 + strlen(tmpenvp))) {
 		if (myathdp->getenvp != NULL)
@@ -174,7 +175,7 @@ __getenv_a(const char *varname)
 		myathdp->getenvp = malloc(varlen);
 		myathdp->getenvlen = varlen;
 	}
-	__toascii_a(myathdp->getenvp,tmpenvp);
+	__toascii_a(myathdp->getenvp, tmpenvp);
 	return(myathdp->getenvp); /* Return address of return buffer  */
 }
 
@@ -416,7 +417,7 @@ __l64a_a( long int l )
 int
 __unsetenv_a(const char *name)
 {
-    return setenv((const char *) __getEstring1_a(name), "", 1);
+    return setenv((const char *) __getEstring1_a(name), NULL, 1);
 }
 
 /**

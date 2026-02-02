@@ -41,8 +41,6 @@
 #pragma export(__munmap)
 #pragma export(__nice)
 #pragma export(__openlog_a)
-#pragma export(__pthread_key_delete)
-#pragma export(__pthread_sigmask)
 #pragma export(__sched_yield)
 #pragma export(set_tag_fd_binary)
 #pragma export(set_tag_fd_text)
@@ -55,20 +53,6 @@
 #pragma export(__syslog_a)
 #pragma export(__toCcsid)
 #pragma export(__toCSName)
-#pragma export(pthread_atexit_zvm)
-#pragma export(pthread_atfork_zvm)
-#pragma export(pthread_key_create_zvm)
-#pragma export(pthread_mutex_destroy_zvm)
-#pragma export(pthread_mutex_init_zvm)
-#pragma export(pthread_mutex_lock_zvm)
-#pragma export(pthread_mutex_unlock_zvm)
-#pragma export(pthread_once_zvm)
-#pragma export(pthread_setspecific_zvm)
-#pragma export(pthread_mutexattr_settype_zvm)
-#pragma export(pthread_mutexattr_init_zvm)
-#pragma export(pthread_mutexattr_destroy_zvm)
-#pragma export(pthread_getspecific_zvm)
-#pragma export(pthread_key_delete_zvm)
 
 #pragma map(__ae_autoconvert_state_a, "__ae_autoconvert_state")
 #pragma map(__closelog, "closelog")
@@ -81,8 +65,6 @@
 #pragma map(__munmap, "munmap")
 #pragma map(__nice, "nice")
 #pragma map(__openlog_a, "openlog")
-#pragma map(__pthread_key_delete, "@@PT@KD")
-#pragma map(__pthread_sigmask, "@@PT@SM")
 #pragma map(__sched_yield, "@@SCHD@Y")
 #pragma map(__setgrent, "setgrent")
 #pragma map(__setgroups, "@@SETGRP")
@@ -92,20 +74,6 @@
 #pragma map(__syslog_a, "\174\174A00366")
 #pragma map(__toCcsid, "\174\174A00125")
 #pragma map(__toCSName, "\174\174A00126")
-#pragma map(pthread_atexit_zvm, "pthread_atexit")
-#pragma map(pthread_atfork_zvm, "pthread_atfork")
-#pragma map(pthread_key_create_zvm, "\174\174PT3KC")
-#pragma map(pthread_mutex_destroy_zvm, "\174\174PT3MD")
-#pragma map(pthread_mutex_init_zvm, "\174\174PT3MI")
-#pragma map(pthread_mutex_lock_zvm, "\174\174PT3ML")
-#pragma map(pthread_mutex_unlock_zvm, "\174\174PT3MU")
-#pragma map(pthread_once_zvm, "\174\174PT3O")
-#pragma map(pthread_setspecific_zvm, "\174\174PT3SS")
-#pragma map(pthread_mutexattr_settype_zvm, "\174\174PT3TS")
-#pragma map(pthread_mutexattr_init_zvm, "\174\174PT3XI")
-#pragma map(pthread_mutexattr_destroy_zvm, "\174\174PT3XS")
-#pragma map(pthread_getspecific_zvm, "\174\174PT8GS")
-#pragma map(pthread_key_delete_zvm, "pthread_key_delete")
 
 static int niceValue = 10;  /** simulated nice value */
 
@@ -331,36 +299,6 @@ __setlogmask(int mask)
 }
 
 /**
- * @brief pthread_key_delete stub
- *
- */
-int 
-__pthread_key_delete(pthread_key_t key) 
-{
-    return 0;
-}
-
-/**
- * @brief pthread_key_delete stub
- *
- */
-int 
-pthread_key_delete_zvm(pthread_key_t key) 
-{
-    return 0;
-}
-
-/**
- * @brief pthread_sigmask stub
- *
- */
-int
-__pthread_sigmask(int how, const sigset_t *set, sigset_t *oldset)
-{
-    return 0;
-}
-
-/**
  * @brief mmap stub
  *
  */
@@ -463,126 +401,4 @@ __toCSName(__ccsid_t id, char *csname)
     }
     errno = EINVAL;
     return -1;
-}
-
-/**
- * @brief pthread atexit sub
- */
-int
-pthread_atexit_zvm(void (*prepare)(void), void (*parent)(void), void (*child)(void))
-{
-    return ENOMEM;
-}
-
-/**
- * @brief pthread atfork sub
- */
-int
-pthread_atfork_zvm(void (*prepare)(void), void (*parent)(void), void (*child)(void))
-{
-    return ENOMEM;
-}
-
-/**
- * @brief pthread_key_create front-end
- */
-int
-pthread_key_create_zvm(pthread_key_t *key, void (*destructor)(void *))
-{
-    return pthread_key_create(key, destructor);
-}
-
-/**
- * @brief pthread_mutext_detroy front-end
- */
-int
-pthread_mutex_destroy_zvm(pthread_mutex_t *mutex)
-{
-    return pthread_mutex_destroy(mutex);
-}
-
-/**
- * @brief pthread_mutext_init front-end
- */
-int
-pthread_mutex_init_zvm(pthread_mutex_t *mutex, const pthread_mutexattr_t *attr)
-{
-    return pthread_mutex_init(mutex, (pthread_mutexattr_t *) attr);
-}
-
-/**
- * @brief pthread_mutex_lock front-end
- */
-int
-pthread_mutex_lock_zvm(pthread_mutex_t *mutex)
-{
-    return pthread_mutex_lock(mutex);
-}
-
-/**
- * @brief pthread_mutex_unlock front-end
- */
-int
-pthread_mutex_unlock_zvm(pthread_mutex_t *mutex)
-{
-    return pthread_mutex_unlock(mutex);
-}
-
-/**
- * @brief pthread_once front-end
- */
-int
-pthread_once_zvm(pthread_once_t *once_control, void (*init_routine)(void))
-{
-    return pthread_once(once_control, init_routine);
-}
-
-/**
- * @brief pthread_getspecific front-end
- */
-char *
-pthread_getspecific_zvm(pthread_key_t key)
-{
-    void *res;
-
-    if (pthread_getspecific(key, &res) == 0)
-        return (char *) res;
-    else
-        return NULL;
-}
-
-/**
- * @brief pthread_setspecific front-end
- */
-int
-pthread_setspecific_zvm(pthread_key_t key, const void *value)
-{
-    return pthread_setspecific(key, (void *) value);
-}
-
-/**
- * @brief pthread_mutexattr_init front-end
- */
-int
-pthread_mutexattr_init_zvm(pthread_mutexattr_t *attr)
-{
-    return pthread_mutexattr_init(attr);
-}
-
-/**
- * @brief pthread_mutexattr_destroyfront-end
- */
-int
-pthread_mutexattr_destroy_zvm(pthread_mutexattr_t *attr)
-{
-    return pthread_mutexattr_destroy(attr);
-}
-
-/**
- * @brief pthread_mutexattr_setkind_npfront-end
- */
-int
-pthread_mutexattr_settype_zvm(pthread_mutexattr_t *attr, int type)
-{
-    return pthread_mutexattr_setkind_np(attr, type);
 }

@@ -18,6 +18,8 @@
 #include <stdio.h>
 #include <limits.h>
 #include <errno.h>
+#include <signal.h>
+#include <ctest.h>
 #include "global_a.h"
 
 #pragma export(__initASCIIlib_a)
@@ -55,6 +57,18 @@ getathdp()
 	return(athdptr);
 }
 
+/**
+ * @brief Abnormal termination handling and setup
+ *
+ */
+static void 
+handler(int sig, siginfo_t *si, void *unused)
+{
+    fprintf(stderr, "Signal Handler Invoked\n");
+    ctrace("Signal");
+    _exit(1);
+}
+
 /*%PAGE																*/
 /**
  * @brief Main initialization for all ASCII library routines
@@ -65,6 +79,8 @@ __initASCIIlib_a()
 {
 	ATHD_t *athdptr;
 	int athdsz;
+    struct sigaction sa;
+
 	/* Perform key create for process if necessary */
 	if (keyptr == (pthread_key_t *) NULL) {
 		keyptr = &key;
@@ -108,6 +124,15 @@ __initASCIIlib_a()
     __insertFD(fileno(stdout), NULL);
     __insertFD(fileno(stderr), NULL);
 
+    sa.sa_flags = SA_SIGINFO;
+    sigemptyset(&sa.sa_mask);
+    sa.sa_sigaction = handler;
+    if (sigaction(SIGSEGV, &sa, NULL) == -1)
+        perror("sigaction");
+    if (sigaction(SIGFPE, &sa, NULL) == -1)
+        perror("sigaction");
+    if (sigaction(SIGILL, &sa, NULL) == -1)
+        perror("sigaction");
 	return(athdptr);
 }
 

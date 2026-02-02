@@ -1,6 +1,7 @@
 /**
  * @file pthread_a.c
  * @brief Contains ASCII-to-EBCDIC front end to the UNIX03_THREAD functions
+ * as well as implementations of pthreads that aren't supported by CMS OE.
  * 
  * Notes	:	All the procedures are name "__xxxxxxxx_a" where
  *				xxxxxxxx is the name of the standard C run-time
@@ -19,6 +20,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
+#include <errno.h>
 #include "global_a.h"
 
 #pragma export(_pthread_attr_destroy_3)
@@ -80,6 +82,20 @@
 #pragma map(_pthread_mutexattr_init_3,         "\174\174PT3XI")
 #pragma map(_pthread_once_3,                   "\174\174PT3O")
 #pragma map(_pthread_setspecific_3,            "\174\174PT3SS")
+
+#pragma export(__pthread_key_delete)
+#pragma export(__pthread_sigmask)
+#pragma export(pthread_atexit_zvm)
+#pragma export(pthread_atfork_zvm)
+#pragma export(pthread_key_delete_zvm)
+#pragma export(pthread_mutexattr_settype_zvm)
+
+#pragma map(__pthread_key_delete,              "@@PT@KD")
+#pragma map(__pthread_sigmask,                 "@@PT@SM")
+#pragma map(pthread_atexit_zvm,                "pthread_atexit")
+#pragma map(pthread_atfork_zvm,                "pthread_atfork")
+#pragma map(pthread_key_delete_zvm,            "pthread_key_delete")
+#pragma map(pthread_mutexattr_settype_zvm,     "\174\174PT3TS")
 
 /*%PAGE                                           */
 /**
@@ -274,10 +290,13 @@ _pthread_detach_3(pthread_t *thread)
  * @brief Map UNIX03_THREAD pthread_getspecific to OE threads
  */
  
-int
-_pthread_getspecific_3(pthread_key_t key, void **value)
+void *
+_pthread_getspecific_3(pthread_key_t key)
 {
-    return pthread_getspecific(key, value);
+    void *value;
+
+    pthread_getspecific(key, &value);
+    return value;
 }
  
 /*%PAGE                                           */
@@ -399,4 +418,62 @@ int
 _pthread_setspecific_3(pthread_key_t key, void *value)
 {
     return pthread_setspecific(key, value);
+}
+
+/*%PAGE                                           */
+/**
+ * @brief pthread_key_delete stub
+ *
+ */
+int 
+__pthread_key_delete(pthread_key_t key) 
+{
+    return 0;
+}
+
+/**
+ * @brief pthread_key_delete stub
+ *
+ */
+int 
+pthread_key_delete_zvm(pthread_key_t key) 
+{
+    return 0;
+}
+
+/**
+ * @brief pthread_sigmask stub
+ *
+ */
+int
+__pthread_sigmask(int how, const sigset_t *set, sigset_t *oldset)
+{
+    return 0;
+}
+
+/**
+ * @brief pthread atexit sub
+ */
+int
+pthread_atexit_zvm(void (*prepare)(void), void (*parent)(void), void (*child)(void))
+{
+    return ENOMEM;
+}
+
+/**
+ * @brief pthread atfork sub
+ */
+int
+pthread_atfork_zvm(void (*prepare)(void), void (*parent)(void), void (*child)(void))
+{
+    return ENOMEM;
+}
+
+/**
+ * @brief pthread_mutexattr_setkind_np front-end
+ */
+int
+pthread_mutexattr_settype_zvm(pthread_mutexattr_t *attr, int type)
+{
+    return pthread_mutexattr_setkind_np(attr, type);
 }
