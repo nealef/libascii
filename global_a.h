@@ -10,6 +10,7 @@
 #include <locale.h>
 #include <sys/stat.h>
 #include "_Ascii_a.h"
+#include "envtable.h"
 
 /** 
  * Define the macro used to obtain the pointer to the
@@ -75,15 +76,13 @@ typedef struct FDXL fdxl_t;
  */
 struct ATHD {
 	char         cthdeye[4];   /* athd eye catcher                    */
+	int          initdone;     /* athd data area  initialization complete   */
 	pid_t        pid;          /* process id                          */
 	pthread_t    threadid;     /* thread id                           */
 	iconv_t      cd_EtoA;      /* EBCDIC to ASCII iconv descriptor    */
 	iconv_t      cd_AtoE;      /* ASCII to EBCDIC iconv descriptor    */
-	void         *getenvp;     /* getenv return buffer                */
-	int          getenvlen;    /* length of getenv return buffer      */
 
 	char         *epathname;   /* ebcdic path name                    */
-	int          initdone;     /* athd data area  initialization complete   */
 	char         *estring1_a;  /* ebcdic string returned by __getEstring1_a */
 	char         *estring2_a;  /* ebcdic string returned by __getEstring2_a */
 	char         *estring3_a;  /* ebcdic string returned by __getEstring3_a */
@@ -92,6 +91,7 @@ struct ATHD {
     int          csstate;      /* ccsid conversion state */
     int          prvcsstate;   /* Previous ccsid conversion state */
     fdxl_t       *fdxl;        /* root of fd translation lookup table */
+    hashTable_t  *envtbl;      /* Hash table for caching ASCII versions of env vars */
 };
 
 typedef struct ATHD ATHD_t;

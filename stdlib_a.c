@@ -27,6 +27,7 @@
 #include <ieee_md.h>
 #endif
 #include "global_a.h"
+#include "envtable.h"
 
 #pragma export(__Envna_a)
 #pragma export(__a64l_a)
@@ -153,30 +154,30 @@ __gcvt_a(double x, int ndigit, char * buf)
 char *
 __getenv_a(const char *varname)
 {
-	ATHD_t *myathdp;
-	char tmpvarname[80];
-	char *tmpvarnamep;
-	int varlen=80;
-	char *tmpenvp;
-	char *getreturnp;
-	if ((varlen = 1+strlen(varname)) > 80)
-		tmpvarnamep = __alloca(varlen);
-	else
-		tmpvarnamep = &tmpvarname[0];
-	__toebcdic_a(tmpvarnamep,varname); /* convert ascii to ebcdic */
-	tmpenvp = getenv(tmpvarnamep);
-	if (tmpenvp == NULL)
-		return(tmpenvp);
+	ATHD_t *atp;
+	char *eName;
+	char *eValue;
+	char *aValue;
+	char *result;
 
-	myathdp = athdp();  /* get pointer to athd thread structure */
-	if (myathdp->getenvlen < (varlen = 1 + strlen(tmpenvp))) {
-		if (myathdp->getenvp != NULL)
-			free(myathdp->getenvp);
-		myathdp->getenvp = malloc(varlen);
-		myathdp->getenvlen = varlen;
-	}
-	__toascii_a(myathdp->getenvp, tmpenvp);
-	return(myathdp->getenvp); /* Return address of return buffer  */
+	atp = athdp();  /* get pointer to athd thread structure */
+
+    if ((aValue = htFetchValue(atp->envtbl, varname)) != NULL)
+            return aValue;
+
+    eName = __alloca(strlen(varname) + 1);
+
+	__toebcdic_a(eName, varname); /* convert ascii to ebcdic */
+	eValue = getenv(eName);
+
+	if (eValue == NULL)
+		return(NULL);
+
+    aValue = __alloca(strlen(eValue) + 1);
+	__toascii_a(aValue, eValue);
+    result = htAddValue(atp->envtbl, varname, aValue, 1);
+
+	return(result); /* Return address of return buffer  */
 }
 
 /**
@@ -287,8 +288,12 @@ __realpath_a(const char * file_name, char *resolved_name)
 int 
 __setenv_a(char *var_name, char *new_value, int change_flag)
 {
+	ATHD_t *atp = athdp();
+
+    (void) htAddValue(atp->envtbl, var_name, new_value, change_flag);
 	return setenv((const char *) __getEstring1_a(var_name),
-				 (const char *) __getEstring2_a(new_value),change_flag);
+				  (const char *) __getEstring2_a(new_value),
+                  change_flag);
 }
 
 /**
@@ -417,6 +422,9 @@ __l64a_a( long int l )
 int
 __unsetenv_a(const char *name)
 {
+	ATHD_t *atp = athdp();
+
+    htDeleteValue(atp->envtbl, name);
     return setenv((const char *) __getEstring1_a(name), NULL, 1);
 }
 
@@ -460,20 +468,4 @@ __Envna_a(void)
     a[iEnv] = NULL;
 
     return &a;
-}
-
-/*%PAGE																*/
-/**
- * Start of routines that are not exported
- */
-
-/**
- * @brief Thread termination routine for getenv() ASCII.
- */
-void 
-term_getenv(ATHD_t *athdptr)
-{
-	if (athdptr->getenvp != NULL)
-		free(athdptr->getenvp);
-	return;
 }

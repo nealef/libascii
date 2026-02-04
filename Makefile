@@ -18,8 +18,8 @@ CFLAGS	= -g -O2 -c $(DEBUG) $(CPPFLAGS) -I./ -D_ALL_SOURCE -qxplink -qlanglvl=ex
 SHLDFLAGS = -O -g -qxplink -qdll -Wl,dll -q32
 
 # Define list of programs to be processed
-OBJS	= ctest_a.o ctype_a.o dirent_a.o dlfcn_a.o \
-		  dll_a.o dynit_a.o fcntl_a.o fnmatch_a.o grp_a.o iconv_a.o \
+OBJS	= ctest_a.o ctype_a.o dirent_a.o dlfcn_a.o dll_a.o dynit_a.o  \
+		  envtable.o fcntl_a.o fnmatch_a.o glob_a.o grp_a.o iconv_a.o \
 		  if_a.o inet_a.o ipc_a.o langin_a.o locale_a.o init_a.o \
 		  math_a.o netdb2_a.o nl_typ_a.o pthread_a.o print_a.o \
 		  pwd_a.o regex_a.o rexec_a.o scanf_a.o spawn_a.o socket_a.o \
