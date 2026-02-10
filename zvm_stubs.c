@@ -15,6 +15,7 @@
  *              All rights reserved.                                *
  ********************************************************************/
 
+#include <stdlib.h>
 #include <syslog.h>
 #include <signal.h>
 #include <sys/time.h>
@@ -306,8 +307,35 @@ void *
 __mmap(void *addr, size_t length, int prot, int flags,
        int fd, off_t offset)
 {
-    errno = EINVAL;
-    return ((void *) -1);
+    void *mm = valloc(length);
+
+    if (mm != NULL) {
+        if (fd != -1) {
+            ssize_t rem = length,
+                    lRead;
+            void *loc = mm;
+            if ((lseek(fd, offset, SEEK_SET)) < 0) {
+                free(mm);
+                return ((void *) -1);
+            }
+            lRead = read(fd, mm, rem);
+            while (lRead < rem) {
+                if ((lRead < 0) && (errno != EINTR)) {
+                    free(mm);
+                    return ((void *) -1);
+                } else if (lRead == 0)
+                    return mm;
+                else {
+                    rem -= lRead;
+                    loc += lRead;
+                }
+                lRead = read(fd, loc, rem);
+            }
+            return mm;
+        } else
+            return mm; 
+    } else
+        return ((void *) -1);
 }
 
 /**
@@ -317,8 +345,8 @@ __mmap(void *addr, size_t length, int prot, int flags,
 int 
 __munmap(void *addr, size_t length)
 {
-    errno = EINVAL;
-    return -1;
+    free(addr);
+    return 0;
 }
 
 /**

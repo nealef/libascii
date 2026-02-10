@@ -42,15 +42,22 @@
 /**
  * @brief area to hold buffers pointed to by AHD
  */
-struct ebuffers {
+struct str_buffers {
     /* Buffers pointed to by the estringx_a pointers in ATHD          */
-    char   estring1_buffer[MAXSTRING_a+1]; /* Warning this field must
-                                              be first                */
-    char   estring2_buffer[MAXSTRING_a+1];
-    char   estring3_buffer[MAXSTRING_a+1];                          
-    char   estring4_buffer[MAXSTRING_a+1];
+    char    astring1_buffer[MAXSTRING_a+1]; /* This field must first  */
+    char    astring2_buffer[MAXSTRING_a+1];
+    char    estring1_buffer[MAXSTRING_a+1]; 
+    char    estring2_buffer[MAXSTRING_a+1];
+    char    estring3_buffer[MAXSTRING_a+1];                          
+    char    estring4_buffer[MAXSTRING_a+1];
+    wchar_t awstring1_buffer[MAXSTRING_a+1]; 
+    wchar_t awstring2_buffer[MAXSTRING_a+1];
+    wchar_t ewstring1_buffer[MAXSTRING_a+1]; 
+    wchar_t ewstring2_buffer[MAXSTRING_a+1];
+    wchar_t ewstring3_buffer[MAXSTRING_a+1];                          
+    wchar_t ewstring4_buffer[MAXSTRING_a+1];
 };
-typedef struct ebuffers ebuffers_t;
+typedef struct str_buffers str_buffers_t;
 
 /**
  * @brief Converts EBCDIC argument strings to ASCII
@@ -279,6 +286,212 @@ __toebcdiclen_a(char *outascii, const char *inebcdic, int insize)
 }
 
 /**
+ * @brief Returns address of an ASCII wide string copy of the EBCDIC input string.
+ *
+ * Notes:	
+ *   1. May only be called once per ASCII library routine because the string is not malloc()ed.
+ *   2. Multiple copies allows for limited multiple calls
+ */
+wchar_t *
+__getAwstring1_a(const wchar_t *einstr1)
+{
+	ATHD_t *myathdp;
+	myathdp = athdp();
+    if (einstr1 != NULL) {
+        wcsncpy(myathdp->awstring1_a, einstr1, MAXSTRING_a);
+        __towascii_a(myathdp->awstring1_a, myathdp->awstring1_a);
+	    return myathdp->awstring1_a;
+    }
+    return NULL;
+}
+
+/**
+ * @brief Returns address of an ASCII wide string copy of the EBCDIC input string.
+ *
+ * Notes:	
+ *   1. May only be called once per ASCII library routine because the string is not malloc()ed.
+ *   2. Multiple copies allows for limited multiple calls
+ */
+wchar_t *
+__getAwstring2_a(const wchar_t *einstr2)
+{
+	ATHD_t *myathdp;
+	myathdp = athdp();
+    if (einstr2 != NULL) {
+        wcsncpy(myathdp->awstring2_a, einstr2, MAXSTRING_a);
+        __towascii_a(myathdp->awstring2_a, myathdp->awstring2_a);
+	    return myathdp->awstring2_a;
+    }
+    return NULL;
+}
+
+/**
+ * @brief Returns address of an EBCDIC string copy of the ASCII input string.
+ *
+ * Notes:	
+ *   1. May only be called once per ASCII library routine because the string is not malloc()ed.
+ *   2. Multiple copies allows for limited multiple calls
+ */
+wchar_t *
+__getEwstring1_a(const wchar_t *einstr1)
+{
+	ATHD_t *myathdp;
+	myathdp = athdp();
+    if (einstr1 != NULL) {
+        wcsncpy(myathdp->ewstring1_a, einstr1, MAXSTRING_a);
+        __towebcdic_a(myathdp->ewstring1_a, myathdp->ewstring1_a);
+	    return myathdp->ewstring1_a;
+    }
+    return NULL;
+}
+
+/**
+ * @brief Returns address of an EBCDIC string copy of the ASCII input string.
+ *
+ * Notes:	
+ *   1. May only be called once per ASCII library routine because the string is not malloc()ed.
+ *   2. Multiple copies allows for limited multiple calls
+ */
+wchar_t *
+__getEwstring2_a(const wchar_t *einstr2)
+{
+	ATHD_t *myathdp;
+	myathdp = athdp();
+    if (einstr2 != NULL) {
+        wcsncpy(myathdp->ewstring2_a, einstr2, MAXSTRING_a);
+        __towebcdic_a(myathdp->ewstring2_a, myathdp->ewstring2_a);
+	    return myathdp->ewstring2_a;
+    }
+    return NULL;
+}
+
+/**
+ * @brief Returns address of an EBCDIC string copy of the ASCII input string.
+ *
+ * Notes:	
+ *   1. May only be called once per ASCII library routine because the string is not malloc()ed.
+ *   2. Multiple copies allows for limited multiple calls
+ */
+wchar_t *
+__getEwstring3_a(const wchar_t *einstr3)
+{
+	ATHD_t *myathdp;
+	myathdp = athdp();
+    if (einstr3 != NULL) {
+        wcsncpy(myathdp->ewstring3_a, einstr3, MAXSTRING_a);
+        __towebcdic_a(myathdp->ewstring3_a, myathdp->ewstring3_a);
+	    return myathdp->ewstring3_a;
+    }
+    return NULL;
+}
+
+/**
+ * @brief Returns address of an EBCDIC string copy of the ASCII input string.
+ *
+ * Notes:	
+ *   1. May only be called once per ASCII library routine because the string is not malloc()ed.
+ *   2. Multiple copies allows for limited multiple calls
+ */
+wchar_t *
+__getEwstring4_a(const wchar_t *einstr4)
+{
+	ATHD_t *myathdp;
+	myathdp = athdp();
+    if (einstr4 != NULL) {
+        wcsncpy(myathdp->ewstring4_a, einstr4, MAXSTRING_a);
+        __towebcdic_a(myathdp->ewstring4_a, myathdp->ewstring4_a);
+	    return myathdp->ewstring4_a;
+    }
+    return NULL;
+}
+
+/**
+ * @brief Convert null-terminated EBCDIC (IBM-1047) string to ASCII (ISO8859-1).
+ *
+ * @param outasciistr Output ASCII string
+ * @param inebcdicstr Input EBCDIC string
+ */
+void 
+__towascii_a(wchar_t *outasciistr, const wchar_t *inebcdicstr)
+{
+	size_t rc;
+	size_t in_size, out_size;
+	ATHD_t *myathdp;
+	myathdp = athdp();  /* get pointer to ATHD thread structure */
+	out_size = in_size = wcslen(inebcdicstr) * 2 + 2; /* plus null byte */
+	rc = iconv(myathdp->cd_EtoA, (char **) &inebcdicstr, &in_size, 
+               (char **) &outasciistr, &out_size);
+	if (rc == (size_t) -1)
+		__panic_a("Error from iconv() in __toascii_a()");
+	return;
+}
+
+/**
+ * @brief Convert null-terminated ASCII (ISO8859-1) string to EBCDIC (IBM-1047)
+ *
+ * @param outebcdicstr Output EBCDIC string
+ * @param inasciistr Input ASCII string
+ */
+void 
+__towebcdic_a(wchar_t *outebcdicstr, const wchar_t *inasciistr)
+{
+	size_t rc;
+	size_t in_size, out_size;
+	ATHD_t *myathdp;
+	myathdp = athdp();  /* get pointer to ATHD thread structure */
+	out_size = in_size = wcslen(inasciistr) * 2 + 2; /* plus null byte */
+	rc = iconv(myathdp->cd_AtoE, (char **) &inasciistr, &in_size, 
+               (char **) &outebcdicstr, &out_size);
+	if (rc == (size_t) -1)
+		__panic_a("Error from iconv() in __toebcdic_a()");
+	return;
+}
+
+/**
+ * @brief Convert null-terminated EBCDIC (IBM-1047) string to ASCII (ISO8859-1) with length.
+ *
+ * @param outasciistr Output ASCII string
+ * @param inebcdicstr Input EBCDIC string
+ * @param insize length of input string
+ */
+void 
+__towasciilen_a(wchar_t *outasciistr, const wchar_t *inebcdicstr, int insize)
+{
+	size_t rc;
+	size_t in_size, out_size;
+	ATHD_t *myathdp;
+	myathdp = athdp();  /* get pointer to ATHD thread structure */
+	out_size = in_size = insize * 2;
+	rc = iconv(myathdp->cd_EtoA, (char **) &inebcdicstr, &in_size, 
+               (char **) &outasciistr, &out_size);
+	if (rc == (size_t) -1)
+		__panic_a("Error from iconv() in __towasciilen_a()");
+	return;
+}
+
+/**
+ * @brief Convert ASCII (ISO8859-1) string to EBCDIC (IBM-1047) with length.
+ *
+ * @param inascii Input ASCII buffer
+ * @param outebcdic Output EBCDIC buffer
+ * @param insize length of input 
+ */
+void 
+__towebcdiclen_a(wchar_t *outascii, const wchar_t *inebcdic, int insize)
+{
+	size_t rc;
+	size_t in_size, out_size;
+	ATHD_t *myathdp;
+	myathdp = athdp();  /* get pointer to ATHD thread structure */
+	out_size = in_size = insize * 2;
+	rc = iconv(myathdp->cd_AtoE, (char **) &inebcdic, &in_size, 
+               (char **) &outascii, &out_size);
+	if (rc == (size_t) -1)
+		__panic_a("Error from iconv() in __towebcdiclen__a()");
+	return;
+}
+
+/**
  * @brief check STDxxx for translation
  */
 static void
@@ -319,9 +532,9 @@ checkStdIO()
 void 
 init_trans_a()
 {
-	ATHD_t 		*myathdp;
-	ebuffers_t  *myebuffers;
-	int			ebuffers_sz;
+	ATHD_t 		  *myathdp;
+	str_buffers_t *myebuffers;
+	int			  str_buffers_sz;
 	myathdp = athdp();  /* get pointer to ATHD thread structure */
 	myathdp->cd_EtoA = iconv_open("ISO8859-1", "IBM-1047"); 
 	if (myathdp->cd_EtoA == (iconv_t) -1)
@@ -332,13 +545,21 @@ init_trans_a()
 
 	/* -- Get space for local buffers                             */
 	/* -- Set estringx_a ptrs in ATHD                             */
-	ebuffers_sz = sizeof(ebuffers_t);
-	myebuffers  = (ebuffers_t *) calloc(1,ebuffers_sz);
+	str_buffers_sz = sizeof(str_buffers_t);
+	myebuffers  = (str_buffers_t *) calloc(1, str_buffers_sz);
 
-	myathdp->estring1_a = (char *)&(myebuffers->estring1_buffer); 
-	myathdp->estring2_a = (char *)&(myebuffers->estring2_buffer); 
-	myathdp->estring3_a = (char *)&(myebuffers->estring3_buffer); 
-	myathdp->estring4_a = (char *)&(myebuffers->estring4_buffer); 
+	myathdp->astring1_a  = (char *)&(myebuffers->astring1_buffer); 
+	myathdp->astring2_a  = (char *)&(myebuffers->astring2_buffer); 
+	myathdp->estring1_a  = (char *)&(myebuffers->estring1_buffer); 
+	myathdp->estring2_a  = (char *)&(myebuffers->estring2_buffer); 
+	myathdp->estring3_a  = (char *)&(myebuffers->estring3_buffer); 
+	myathdp->estring4_a  = (char *)&(myebuffers->estring4_buffer); 
+	myathdp->awstring1_a = (wchar_t *)&(myebuffers->astring1_buffer); 
+	myathdp->awstring2_a = (wchar_t *)&(myebuffers->astring2_buffer); 
+	myathdp->ewstring1_a = (wchar_t *)&(myebuffers->estring1_buffer); 
+	myathdp->ewstring2_a = (wchar_t *)&(myebuffers->estring2_buffer); 
+	myathdp->ewstring3_a = (wchar_t *)&(myebuffers->estring3_buffer); 
+	myathdp->ewstring4_a = (wchar_t *)&(myebuffers->estring4_buffer); 
 
     checkStdIO();
 
@@ -354,9 +575,9 @@ init_trans_a()
 void 
 term_trans(ATHD_t *athdptr)
 {
-	iconv_t 	lociconv;
-	char 		*locstring;
-	ebuffers_t *loc_ebuffers;
+	iconv_t 	  lociconv;
+	char   		  *locstring;
+	str_buffers_t *loc_ebuffers;
 
 	/* If ..., clear so that we don't do it again					*/
 	if ((lociconv = athdptr->cd_EtoA) != (iconv_t) 0) {
@@ -371,8 +592,8 @@ term_trans(ATHD_t *athdptr)
 	}
 
 	/* Free ebuffers area                                          */
-	if ((loc_ebuffers = (ebuffers_t *)athdptr->estring1_a) != NULL) {
-		athdptr->estring1_a = NULL;
+	if ((loc_ebuffers = (str_buffers_t *)athdptr->astring1_a) != NULL) {
+		athdptr->astring1_a = NULL;
 		free(loc_ebuffers);
 	}
 	return;

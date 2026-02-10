@@ -173,7 +173,7 @@ __fopen_a(const char *path, const char *mode)
 
 	fp = fopen(ePath, (const char *) __getEstring2_a(mode));
     if (fp != NULL)
-        __insertFD(fileno(fp), new);
+        (void)__insertFD(fileno(fp), new);
 
     return fp;
 
@@ -244,7 +244,7 @@ __freopen_a( const char *path, const char *mode, FILE *stream)
 	             (char const *) __getEstring2_a(mode),
 				   stream);
     if (fp != NULL)
-        __insertFD(fileno(fp), NULL);
+        (void)__insertFD(fileno(fp), NULL);
 
     return fp;
 }

@@ -9,6 +9,7 @@
 #include <iconv.h>
 #include <locale.h>
 #include <sys/stat.h>
+#include <sys/modes.h>
 #include "_Ascii_a.h"
 #include "envtable.h"
 
@@ -83,10 +84,18 @@ struct ATHD {
 	iconv_t      cd_AtoE;      /* ASCII to EBCDIC iconv descriptor    */
 
 	char         *epathname;   /* ebcdic path name                    */
+	char         *astring1_a;  /* ascii string returned by __getAstring1_a */
+	char         *astring2_a;  /* ascii string returned by __getAstring2_a */
 	char         *estring1_a;  /* ebcdic string returned by __getEstring1_a */
 	char         *estring2_a;  /* ebcdic string returned by __getEstring2_a */
 	char         *estring3_a;  /* ebcdic string returned by __getEstring3_a */
 	char         *estring4_a;  /* ebcdic string returned by __getEstring4_a */
+	wchar_t      *awstring1_a; /* ascii string returned by __getAwstring1_a */
+	wchar_t      *awstring2_a; /* ascii string returned by __getAwstring2_a */
+	wchar_t      *ewstring1_a; /* ebcdic string returned by __getEwstring1_a */
+	wchar_t      *ewstring2_a; /* ebcdic string returned by __getEwstring2_a */
+	wchar_t      *ewstring3_a; /* ebcdic string returned by __getEwstring3_a */
+	wchar_t      *ewstring4_a; /* ebcdic string returned by __getEwstring4_a */
 	struct lconv *elconv_a;    /* Ptr to local copy of lconv         */
     int          csstate;      /* ccsid conversion state */
     int          prvcsstate;   /* Previous ccsid conversion state */
@@ -119,11 +128,14 @@ __isAsciiFD(int fd)
 {
 	ATHD_t *myathdp = athdp();
     fdxl_t *fdxl;
+    struct stat st;
+
     for (fdxl = myathdp->fdxl; fdxl != NULL; fdxl = fdxl->next) {
         if (fd == fdxl->fd)
             return (fdxl->ascii);
     }
-    return (1);
+
+    return __insertFD(fd, NULL);
 }
 
 /**
@@ -131,7 +143,7 @@ __isAsciiFD(int fd)
  *
  * @param fd File Descriptor
  */
-static inline void
+static inline int
 __insertFD(int fd, char *path)
 {
 	ATHD_t *myathdp = athdp();
@@ -155,7 +167,7 @@ __insertFD(int fd, char *path)
                     tag = 0;
             }
         } else {
-            if (S_ISSOCK(info.st_mode))
+            if ((S_ISSOCK(info.st_mode)) || (S_ISFIFO(info.st_mode)))
                 tag = 1;
             else 
                 tag = 0;
@@ -178,7 +190,7 @@ __insertFD(int fd, char *path)
         for (fdxl = myathdp->fdxl; fdxl != NULL; fdxl = fdxl->next) {
             if (fdxl->fd == fd) {
                 fdxl->ascii = tag;
-                return;
+                return tag;
             }
             last = fdxl;
         }
@@ -188,6 +200,7 @@ __insertFD(int fd, char *path)
         fdxl->ascii = tag;
         last->next = fdxl;
     }
+    return tag;
 }
 
 /**
