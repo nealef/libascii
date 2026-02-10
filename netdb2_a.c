@@ -25,6 +25,7 @@
 #pragma export(__gethostbyname_a)
 #pragma export(__getnameinfo_a)
 #pragma export(__getprotobyname_a)
+#pragma export(__getprotobynumber_a)
 #pragma export(__getservbyname_a)
 #pragma export(__getservbyport_a)
 
@@ -34,6 +35,7 @@
 #pragma map(__gethostbyname_a, "\174\174A00258")
 #pragma map(__getnameinfo_a, "\174\174A00087")
 #pragma map(__getprotobyname_a, "\174\174A00318")
+#pragma map(__getprotobynumber_a, "\174\174A00319")
 #pragma map(__getservbyname_a, "\174\174A00321")
 #pragma map(__getservbyport_a, "\174\174A00322")
 
@@ -55,94 +57,71 @@ __gai_strerror_a(int errcode)
 
 /**
  * @brief Get address information
+ *
+ * Strangely, many of the getxxxx routines are already "bilingual"
+ * and will automatically convert parameters and results
  */
 int
 __getaddrinfo_a(const char *hostname, const char *servname, 
                 const struct addrinfo *hints, struct addrinfo **res)
 {
-    struct addrinfo *eHints = NULL;
-    int rc;
-
-    if (hints != NULL) {
-        struct addrinfo *h,
-                        *n = __alloca(sizeof (struct addrinfo));
-        eHints = n;
-        for (h = (struct addrinfo *) hints; h != NULL; h = h->ai_next) {
-            *n = *h;
-            if (h->ai_flags & AI_CANONNAME == AI_CANONNAME)
-                __toascii_a(n->ai_canonname, n->ai_canonname);
-            if (n->ai_next != NULL) {
-                n->ai_next = __alloca(sizeof (struct addrinfo));
-                n = n->ai_next;
-            }
-        }
-    }
-
-    rc = getaddrinfo(__getEstring1_a(hostname), __getEstring2_a(servname),
-                     eHints, res);
-    if (rc == 0) {
-        struct addrinfo *h;
-        for (h = *res; h != NULL; h = h->ai_next) 
-            if (h->ai_flags & AI_CANONNAME == AI_CANONNAME)
-                __toascii_a(h->ai_canonname, h->ai_canonname);
-    }
-    return rc;
+    int rc = 0;
+    return getaddrinfo(hostname, servname, hints, res);
 }
 
 /**
  * @brief Get host by address
+ *
+ * Strangely, many of the getxxxx routines are already "bilingual"
+ * and will automatically convert parameters and results
  */
 struct hostent *
 __gethostbyaddr_a(char *address, int address_len, int domain)
 {
-	struct hostent*	my_hostent;
-	my_hostent = gethostbyaddr(address, address_len, domain);
-	if (my_hostent)
-		convertHostentToAscii(my_hostent);
-	return my_hostent;
+	return gethostbyaddr(address, address_len, domain);
 }
 
 /**
  * @brief Get host by name
+ *
+ * Strangely, many of the getxxxx routines are already "bilingual"
+ * and will automatically convert parameters and results
  */
 struct hostent *
 __gethostbyname_a(char *name)
 {
-	struct hostent *my_hostent;
-
-	my_hostent = gethostbyname(__getEstring1_a((const char *)name));
-	if (my_hostent)
-		convertHostentToAscii(my_hostent);
-	return my_hostent;
+	return gethostbyname(name);
 }
 
 /**
  * @brief Get server by name
+ *
  */
 struct servent *
 __getservbyname_a(char *name, char *proto)
 {
-	struct servent *my_servent;
+    struct servent *my_servent;
 
-	my_servent = getservbyname(__getEstring1_a((const char *)name),
-		    				   __getEstring2_a((const char *)proto));
-	if (my_servent)
-		convertServentToAscii(my_servent);
-	return my_servent;
+    my_servent = getservbyname(__getEstring1_a((const char *)name),
+                               __getEstring2_a((const char *)proto));
+    if (my_servent)
+        convertServentToAscii(my_servent);
+    return my_servent;
 }
 
 /**
  * @brief Get server by port
+ *
  */
 struct servent *
 __getservbyport_a(int port, char *proto)
 {
-	struct servent *my_servent;
+    struct servent *my_servent;
 
-	my_servent = getservbyport(port, __getEstring2_a((const char *)proto));
-	if (my_servent)
-		convertServentToAscii(my_servent);
-	return my_servent;
+    my_servent = getservbyport(port, __getEstring2_a((const char *)proto));
+    if (my_servent)
+        convertServentToAscii(my_servent);
+    return my_servent;
 }
 
 /**
@@ -155,6 +134,24 @@ __getprotobyname_a(char *name)
     int alias;
 
 	my_protoent = getprotobyname(__getEstring1_a((const char *)name));
+	if (my_protoent) {
+		__toascii_a(my_protoent->p_name, my_protoent->p_name);
+        for (alias = 0; my_protoent->p_aliases[alias] != NULL; alias++)
+            __toascii_a(my_protoent->p_aliases[alias], my_protoent->p_aliases[alias]);
+    }
+	return my_protoent;
+}
+
+/**
+ * @brief Get proto by number
+ */
+struct protoent *
+__getprotobynumber_a(int proto)
+{
+	struct protoent *my_protoent;
+    int alias;
+
+	my_protoent = getprotobynumber(proto);
 	if (my_protoent) {
 		__toascii_a(my_protoent->p_name, my_protoent->p_name);
         for (alias = 0; my_protoent->p_aliases[alias] != NULL; alias++)

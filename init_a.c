@@ -8,17 +8,14 @@
  *
  */
 
-/********************************************************************
- * Copyright:   Licensed Materials - Property of IBM.               *
- *              (C) Copyright IBM Corp. 1997.                       *
- *              All rights reserved.                                *
- ********************************************************************/
-
 #include <stdlib.h>
 #include <stdio.h>
 #include <limits.h>
 #include <errno.h>
+#include <signal.h>
+#include <ctest.h>
 #include "global_a.h"
+#include "envtable.h"
 
 #pragma export(__initASCIIlib_a)
 
@@ -42,17 +39,29 @@ struct ATHD *
 getathdp()
 {
 	int status;
-	ATHD_t *athdptr;
+	ATHD_t *atp;
 	/*
 	 * Call pthread_getspecific() to get the address of the current thread's
 	 * ATHD structure.  If the current thread doesn't havee a ATHD structure
 	 * then call __initASCIIlib_a() to build one.
 	 */
-	if (((status = pthread_getspecific(key, (void **) &athdptr)) == -1)  ||
-		(athdptr == NULL) ){
-		athdptr = __initASCIIlib_a();
+	if (((status = pthread_getspecific(key, (void **) &atp)) == -1)  ||
+		(atp == NULL) ){
+		atp = __initASCIIlib_a();
 	}
-	return(athdptr);
+	return(atp);
+}
+
+/**
+ * @brief Abnormal termination handling and setup
+ *
+ */
+static void 
+handler(int sig, siginfo_t *si, void *unused)
+{
+    fprintf(stderr, "Signal Handler Invoked\n");
+    ctrace("Signal");
+    _exit(1);
 }
 
 /*%PAGE																*/
@@ -63,8 +72,10 @@ getathdp()
 ATHD_t * 
 __initASCIIlib_a()
 {
-	ATHD_t *athdptr;
+	ATHD_t *atp;
 	int athdsz;
+    struct sigaction sa;
+
 	/* Perform key create for process if necessary */
 	if (keyptr == (pthread_key_t *) NULL) {
 		keyptr = &key;
@@ -73,10 +84,10 @@ __initASCIIlib_a()
 
 	/* Assume the current thread doesn't have a valid athd data area. */
 	athdsz = sizeof(ATHD_t);
-	athdptr = (ATHD_t *) calloc(1,athdsz); 
-    if (athdptr == NULL) 
+	atp = (ATHD_t *) calloc(1,athdsz); 
+    if (atp == NULL) 
         __panic_a("Error allocating thread pointer data area\n");
-	if ((pthread_setspecific(key, (void *) athdptr) == -1) &&
+	if ((pthread_setspecific(key, (void *) atp) == -1) &&
 	    ( errno == EINVAL) ) {
 		/*
 		 * Pthread_setspecific failed because parm key is invalid.
@@ -85,30 +96,45 @@ __initASCIIlib_a()
 		 */
 		keyptr = &key;
 		pthread_key_create(keyptr, __termASCIIlib_a);
-		pthread_setspecific(key, (void *) athdptr);
+		pthread_setspecific(key, (void *) atp);
 	}		
 
 	/* Initialize athd structure. */
 
-	memcpy(athdptr->cthdeye,athdid,4); 
-	athdptr->pid = getpid();
-	athdptr->threadid = pthread_self();
+	memcpy(atp->cthdeye,athdid,4); 
+	atp->pid = getpid();
+	atp->threadid = pthread_self();
 
 	/* Initialize ASCII translation routines. */
 	init_trans_a();	
 
 	/* Initialize ebcdic path name used my many routines. */
-	athdptr->epathname = malloc((size_t) _POSIX_PATH_MAX);
+	atp->epathname = malloc((size_t) _POSIX_PATH_MAX);
 
 	/* Set flag indiating athd initialization completed.  */
-	athdptr->initdone = 1;
+	atp->initdone = 1;
 
     /* Prepare FD translate entries for stdin/out/err */
     __insertFD(fileno(stdin), NULL);
     __insertFD(fileno(stdout), NULL);
     __insertFD(fileno(stderr), NULL);
 
-	return(athdptr);
+    /* Prepare the environment variable handling */
+    atp->envtbl = malloc(sizeof(hashTable_t));
+    htInitTable(atp->envtbl);
+
+    sa.sa_flags = SA_SIGINFO;
+    sigemptyset(&sa.sa_mask);
+    sa.sa_sigaction = handler;
+    if (sigaction(SIGSEGV, &sa, NULL) == -1)
+        perror("sigaction");
+    if (sigaction(SIGFPE, &sa, NULL) == -1)
+        perror("sigaction");
+    if (sigaction(SIGILL, &sa, NULL) == -1)
+        perror("sigaction");
+    if (sigaction(SIGABRT, &sa, NULL) == -1)
+        perror("sigaction");
+	return(atp);
 }
 
 /**
@@ -118,21 +144,21 @@ __initASCIIlib_a()
 void 
 __termASCIIlib_a(void *inparm)
 {
-	ATHD_t *athdptr;
+	ATHD_t *atp;
 	/*
 	 * If athd data area exists and initializatione completed then
 	 * perform termination.
 	 */
-	athdptr = (ATHD_t *) inparm;
-	if (athdptr != NULL) {
-		if ( athdptr->initdone == 1) {
-			athdptr->initdone = 0; /* just to be sure no recursive calls. */
-			term_getenv(athdptr); /* call getenv thread termination.      */
-			term_trans(athdptr);  /* call translation thread termination. */
-			term_locale(athdptr); /* call locale thread termination       */
-			free(athdptr->epathname);
+	atp = (ATHD_t *) inparm;
+	if (atp != NULL) {
+		if (atp->initdone == 1) {
+			atp->initdone = 0; /* just to be sure no recursive calls. */
+			term_trans(atp);  /* call translation thread termination. */
+			term_locale(atp); /* call locale thread termination       */
+			htFreeTable(atp->envtbl);
+			free(atp->epathname);
 		}
-		free(athdptr);     /* free athd data area for current thread */
+		free(atp);     /* free athd data area for current thread */
 	}
     return;  /* for now just return */
 }
