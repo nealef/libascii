@@ -19,16 +19,18 @@
 #include "global_a.h"
 
 #pragma export(__wcscoll_a)
+#pragma export(__wcsftime_a)
 #pragma export(__wcstol_a)
 #pragma export(__wcstoul_a)
 #pragma export(__wcsxfrm_a)
 #pragma export(__wcwidth_a)
 
-#pragma map(__wcscoll_a, "\174\174A00057")
-#pragma map(__wcstol_a, "\174\174A00374")
-#pragma map(__wcstoul_a, "\174\174A00375")
-#pragma map(__wcsxfrm_a, "\174\174A00060")
-#pragma map(__wcwidth_a, "\174\174A00027")
+#pragma map(__wcscoll_a,  "\174\174A00057")
+#pragma map(__wcsftime_a, "\174\174A00111")
+#pragma map(__wcstol_a,   "\174\174A00374")
+#pragma map(__wcstoul_a,  "\174\174A00375")
+#pragma map(__wcsxfrm_a,  "\174\174A00060")
+#pragma map(__wcwidth_a,  "\174\174A00027")
 
 /*%PAGE																*/
 
@@ -42,12 +44,28 @@ __wcscoll_a(const wchar_t *wcs1, const wchar_t *wcs2)
 }
 
 /**
+ * @brief Format Date and Time
+ */
+size_t 
+__wcsftime_a(wchar_t *wcs, size_t maxsize, const wchar_t *format,
+             const struct tm *time_ptr)
+{
+    size_t l;
+
+    l = wcsftime(wcs, maxsize, __getEwstring3_a(format), time_ptr);
+    if (l > 0)
+        __towasciilen_a(wcs, wcs, l);
+
+    return l;
+}
+
+/**
  * @brief Convert wide characters to long integer
  */
 long int 
 __wcstol_a(const wchar_t *nptr, wchar_t **endptr, int base)
 {
-    return(wcstol(nptr, endptr, base));
+    return(wcstol(__getEwstring1_a(nptr), endptr, base));
 }
 
 /**
@@ -56,7 +74,7 @@ __wcstol_a(const wchar_t *nptr, wchar_t **endptr, int base)
 unsigned long int 
 __wcstoul_a(const wchar_t *nptr, wchar_t **endptr, int base)
 {
-    return(wcstoul(nptr, endptr, base));
+    return(wcstoul(__getEwstring1_a(nptr), endptr, base));
 }
 
 /**
@@ -74,5 +92,10 @@ __wcwidth_a(const wchar_t wc)
 size_t 
 __wcsxfrm_a(wchar_t *wcs1, const wchar_t *wcs2, size_t n)
 {
-    return wcsxfrm(wcs1, wcs2, n);
+    size_t l;
+
+    l = wcsxfrm(wcs1, __getEwstring2_a(wcs2), n);
+    if ((wcs1 != NULL) && (l > 0))
+        __towascii_a(wcs1, wcs1);
+    return l;
 }

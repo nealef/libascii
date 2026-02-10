@@ -226,7 +226,10 @@ _pthread_cond_signal_3(pthread_cond_t *cond)
 int
 _pthread_cond_timedwait_3(pthread_cond_t *cond, pthread_mutex_t *mutex, const struct timespec *abstime)
 {
-    return pthread_cond_timedwait(cond, mutex, abstime);
+    int rc = pthread_cond_timedwait(cond, mutex, abstime);
+    if ((rc < 0) && (errno == EAGAIN))
+        errno = ETIMEDOUT;
+    return rc;
 }
  
 /*%PAGE                                           */

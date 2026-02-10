@@ -18,6 +18,8 @@
 #include <stdlib.h>
 #include <stdarg.h>
 #include <stdio.h>
+#include <stdint.h>
+#include <fcntl.h>
 #include <pwd.h>
 #include "global_a.h"
  
@@ -41,6 +43,7 @@
 #pragma export(__readlink_a)
 #pragma export(__rmdir_a)
 #pragma export(__symlink_a)
+#pragma export(__truncate_a)
 #pragma export(__ttyname_a)
 #pragma export(__unlink_a)
 #pragma export(__write_a)
@@ -65,6 +68,7 @@
 #pragma map(__readlink_a, "\174\174A00202")
 #pragma map(__rmdir_a, "\174\174A00203")
 #pragma map(__symlink_a, "\174\174A00205")
+#pragma map(__truncate_a, "\174\174A00206")
 #pragma map(__ttyname_a, "\174\174A00034")
 #pragma map(__unlink_a, "\174\174A00207")
 #pragma map(__write_a, "WRITOVRA")
@@ -281,6 +285,28 @@ __ttyname_a(int fd)
     char *p = ttyname(fd);
 	return  __getAstring1_a(p);
 }
+
+/**
+ * @brief Truncate a file
+ */
+int
+__truncate_a(char *path, off_t length)
+{
+    int fd;
+    struct stat st;
+    char *ePath = __getEstring1_a(path);
+    int rc;
+
+    if ((rc = lstat(ePath, &st)) == 0) {
+        if ((fd = open(ePath, O_WRONLY|O_APPEND)) >= 0) {
+            rc = ftruncate(fd, length);
+            close(fd);
+        } else
+            rc = fd;
+    }
+
+	return rc;
+}
  
 /**
  * @brief Remove a directory entry
@@ -322,7 +348,7 @@ __read_a(int fd, void *buf, size_t len)
     res = read(fd, buf, len);
     if (res > 0) {
         if (!__isAsciiFD(fd)) {
-            __toasciilen_a(buf, buf, len);
+            __toasciilen_a(buf, buf, res);
         } 
     } 
     return res;

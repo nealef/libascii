@@ -115,9 +115,9 @@ __initASCIIlib_a()
 	atp->initdone = 1;
 
     /* Prepare FD translate entries for stdin/out/err */
-    __insertFD(fileno(stdin), NULL);
-    __insertFD(fileno(stdout), NULL);
-    __insertFD(fileno(stderr), NULL);
+    (void)__insertFD(fileno(stdin), NULL);
+    (void)__insertFD(fileno(stdout), NULL);
+    (void)__insertFD(fileno(stderr), NULL);
 
     /* Prepare the environment variable handling */
     atp->envtbl = malloc(sizeof(hashTable_t));

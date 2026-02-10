@@ -76,7 +76,7 @@ __strerror_a(int errnum)
 	char	*p;
 
 	p = strerror(errnum);
-	__toascii_a(p,p);
+	__toascii_a(p, p);
 	return(p);
 }
 
