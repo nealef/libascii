@@ -227,8 +227,13 @@ int
 _pthread_cond_timedwait_3(pthread_cond_t *cond, pthread_mutex_t *mutex, const struct timespec *abstime)
 {
     int rc = pthread_cond_timedwait(cond, mutex, abstime);
-    if ((rc < 0) && (errno == EAGAIN))
-        errno = ETIMEDOUT;
+    if (rc != 0) {
+        if (errno == EAGAIN)
+            errno = rc = ETIMEDOUT;
+        else
+            rc = errno;
+    }
+DEBUG_PRINT("errno: %d", rc);
     return rc;
 }
  
