@@ -263,6 +263,7 @@ CvrtToEbcdic(char *buffer, size_t buffersize, char *format, va_list parg)
 	int			ast = '*';
 	size_t 		period;
 	size_t		lenformat;
+    long long   argllong;
 	char *		result;
 	const char	listofQual[] = "hlL"; 	
 	const char 	listofFlags[] = "-+0'# ";
@@ -271,7 +272,7 @@ CvrtToEbcdic(char *buffer, size_t buffersize, char *format, va_list parg)
 	const int	sizeFlags = sizeof(listofFlags)-1;
 	const int	sizeTypes = sizeof(listofTypes)-1;
 	double		argdbl;
-	long double		argld;
+	long double	argld;
 #ifdef GEN_IEEE_FP
 	double_t	tmpIEEEdbl;
 	float_t		tmpIEEEflt;
@@ -334,16 +335,20 @@ CvrtToEbcdic(char *buffer, size_t buffersize, char *format, va_list parg)
 	 		if (ip[i+1] == '*') {
 				sw_getPrecision = TRUE;   
 				i++;
-			}
-			else  
+			} else {
 				for (precision = 0; isdigit(ip[i+1]); ++i) 
 					precision = precision * 10 + (ip[i+1] - '0');
+            }
 		}
 
-		/* Scan for h,l or L										*/
+		/* Scan for h,l or L (and ll)								*/
 		typeQual = ' ';
 		if ((result = (char *)memchr(listofQual,ip[i+1],sizeQual)) != NULL) {
 			typeQual = ip[i+1];
+            if (ip[i+2] == 'l') {
+                typeQual = 'Z';
+                i++;
+            }
 			i++;
 		}
 
@@ -431,8 +436,13 @@ CvrtToEbcdic(char *buffer, size_t buffersize, char *format, va_list parg)
 			case 'x':
 			case 'X':
 			case 'u':
-				argint = va_arg(parg, int);
-				ccp = sprintf(op,fmtstring,argint);
+                if (typeQual == 'Z') {
+                    argllong = va_arg(parg, long long);
+                    ccp = sprintf(op, fmtstring, argllong);
+                } else {
+                    argint = va_arg(parg, int);
+                    ccp = sprintf(op, fmtstring, argint);
+                }
 				if (ccp == -1) {
 					sw_error = TRUE;
 					continue;
@@ -448,7 +458,7 @@ CvrtToEbcdic(char *buffer, size_t buffersize, char *format, va_list parg)
 				switch (typeQual) {
 					case 'h':
 						argdbl = va_arg(parg,double);
-						ccp = sprintf(op,fmtstring,argdbl);
+						ccp = sprintf(op, fmtstring, argdbl);
 						if (ccp == -1) {
 							sw_error = TRUE;
 							continue;
@@ -456,7 +466,7 @@ CvrtToEbcdic(char *buffer, size_t buffersize, char *format, va_list parg)
 						break;
 					case 'L':
 						argld = va_arg(parg,long double);
-						ccp = sprintf(op,fmtstring,argld);
+						ccp = sprintf(op, fmtstring, argld);
 						if (ccp == -1) {
 							sw_error = TRUE;
 							continue;
@@ -464,7 +474,7 @@ CvrtToEbcdic(char *buffer, size_t buffersize, char *format, va_list parg)
 						break;
 					default:
 						argdbl = va_arg(parg, double);
-						ccp = sprintf(op,fmtstring,argdbl);
+						ccp = sprintf(op, fmtstring, argdbl);
 						if (ccp == -1) {
 							sw_error = TRUE;
 							continue;
@@ -476,7 +486,7 @@ CvrtToEbcdic(char *buffer, size_t buffersize, char *format, va_list parg)
 			/* Input variable is pointer       						*/ 
 			case 'p':
 				argptr = va_arg(parg, void *);
-				ccp = sprintf(op,fmtstring,argptr);
+				ccp = sprintf(op, fmtstring, argptr);
 				if (ccp == -1) {
 					sw_error = TRUE;
 					continue;

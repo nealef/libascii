@@ -54,6 +54,7 @@
 #pragma export(__syslog_a)
 #pragma export(__toCcsid)
 #pragma export(__toCSName)
+#pragma export(nanosleep)
 
 #pragma map(__ae_autoconvert_state_a, "__ae_autoconvert_state")
 #pragma map(__closelog, "closelog")
@@ -429,4 +430,32 @@ __toCSName(__ccsid_t id, char *csname)
     }
     errno = EINVAL;
     return -1;
+}
+
+/**
+ * @brief Implement nanosleep via select
+ */
+int
+nanosleep(const struct timespec *req, struct timespec *rem)
+{
+    struct timeval end, now, timeout;
+    int64_t endUsecs, remUsecs;
+    int32_t usec, sec;
+    int rc;
+
+    endUsecs = req->tv_nsec * 1000 + req->tv_sec * 1000000;
+    gettimeofday(&end, NULL);
+    endUsecs += end.tv_sec * 1000000 + end.tv_usec;
+    timeout.tv_sec = endUsecs / 1000000;
+    timeout.tv_usec = endUsecs % 1000000;
+    rc = select(0, NULL, NULL, NULL, &timeout);
+    while ((rc == -1) && (errno = EINTR)) {
+        gettimeofday(&now, NULL);
+        remUsecs = endUsecs - (now.tv_sec * 1000000 + now.tv_usec);
+        timeout.tv_sec = remUsecs / 1000000;
+        timeout.tv_usec = remUsecs % 1000000;
+        rc = select(0, NULL, NULL, NULL, &timeout);
+    }
+
+    return rc;
 }
