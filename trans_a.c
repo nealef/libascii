@@ -96,9 +96,9 @@ __getAstring1_a(const char *einstr1)
 	ATHD_t *myathdp;
 	myathdp = athdp();
     if (einstr1 != NULL) {
-        strncpy(myathdp->estring1_a,einstr1,MAXSTRING_a);
-        __toascii_a(myathdp->estring1_a,myathdp->estring1_a);
-	    return myathdp->estring1_a;
+        strncpy(myathdp->astring1_a, einstr1, MAXSTRING_a);
+        __toascii_a(myathdp->astring1_a, myathdp->astring1_a);
+	    return myathdp->astring1_a;
     }
     return NULL;
 }
@@ -116,9 +116,9 @@ __getAstring2_a(const char *einstr2)
 	ATHD_t *myathdp;
 	myathdp = athdp();
     if (einstr2 != NULL) {
-        strncpy(myathdp->estring2_a,einstr2,MAXSTRING_a);
-        __toascii_a(myathdp->estring2_a,myathdp->estring2_a);
-	    return myathdp->estring2_a;
+        strncpy(myathdp->astring2_a, einstr2, MAXSTRING_a);
+        __toascii_a(myathdp->astring2_a, myathdp->astring2_a);
+	    return myathdp->astring2_a;
     }
     return NULL;
 }
@@ -136,8 +136,8 @@ __getEstring1_a(const char *ainstr1)
 	ATHD_t *myathdp;
 	myathdp = athdp();
     if (ainstr1 != NULL) {
-        strncpy(myathdp->estring1_a,ainstr1,MAXSTRING_a);
-        __toebcdic_a(myathdp->estring1_a,myathdp->estring1_a);
+        strncpy(myathdp->estring1_a, ainstr1, MAXSTRING_a);
+        __toebcdic_a(myathdp->estring1_a, myathdp->estring1_a);
 	    return myathdp->estring1_a;
     }
     return NULL;
@@ -156,8 +156,8 @@ __getEstring2_a(const char *ainstr2)
 	ATHD_t *myathdp;
 	myathdp = athdp();
     if (ainstr2 != NULL) {
-        strncpy(myathdp->estring2_a,ainstr2,MAXSTRING_a);
-        __toebcdic_a(myathdp->estring2_a,myathdp->estring2_a);
+        strncpy(myathdp->estring2_a, ainstr2, MAXSTRING_a);
+        __toebcdic_a(myathdp->estring2_a, myathdp->estring2_a);
 	    return myathdp->estring2_a;
     }
     return NULL;
@@ -176,8 +176,8 @@ __getEstring3_a(const char *ainstr3)
 	ATHD_t *myathdp;
 	myathdp = athdp();
     if (ainstr3 != NULL) {
-        strncpy(myathdp->estring3_a,ainstr3,MAXSTRING_a);
-        __toebcdic_a(myathdp->estring3_a,myathdp->estring3_a);
+        strncpy(myathdp->estring3_a, ainstr3, MAXSTRING_a);
+        __toebcdic_a(myathdp->estring3_a, myathdp->estring3_a);
 	    return myathdp->estring3_a;
     }
     return NULL;
@@ -196,8 +196,8 @@ __getEstring4_a(const char *ainstr4)
 	ATHD_t *myathdp;
 	myathdp = athdp();
     if (ainstr4 != NULL) {
-        strncpy(myathdp->estring4_a,ainstr4,MAXSTRING_a);
-        __toebcdic_a(myathdp->estring4_a,myathdp->estring4_a);
+        strncpy(myathdp->estring4_a, ainstr4, MAXSTRING_a);
+        __toebcdic_a(myathdp->estring4_a, myathdp->estring4_a);
 	    return myathdp->estring4_a;
     }
     return NULL;

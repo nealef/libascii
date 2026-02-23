@@ -233,7 +233,6 @@ _pthread_cond_timedwait_3(pthread_cond_t *cond, pthread_mutex_t *mutex, const st
         else
             rc = errno;
     }
-DEBUG_PRINT("errno: %d", rc);
     return rc;
 }
  

@@ -22,6 +22,7 @@
 #include <stdlib.h>
 #include <stdarg.h>
 #include <stdio.h>
+#include <limits.h>
 #include <sys/statvfs.h>
 #include "global_a.h"
  
@@ -113,7 +114,12 @@ __fchattr_a(int fd, attrib_t *attr, int value)
 int
 __lchattr_a(const char *path, attrib_t *attr, int value)
 {
-    return __chattr_a(path, attr, value);
+    char real[_POSIX_PATH_MAX];
+
+    if (realpath(__getEstring1_a(path), real))
+        return __chattr_a(__getAstring1_a(real), attr, value);
+    else 
+        return -1;
 }
  
 /**
