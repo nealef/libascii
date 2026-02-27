@@ -169,15 +169,66 @@ __tzznA_a(void)
 
 /**
  * @brief Format time into a string
+ *
+ * The API doesn't support the epoch '%s' format so we have to do it
+ * ourselves.
  */
 size_t 
 __strftime_a(char *dest, size_t maxsize, const char *format, 
          const struct tm *timeptr)
 {
-    size_t len = strftime(dest, maxsize, (const char *) __getEstring3_a(format),
-                          timeptr);
+    size_t len;
+    char *epoch;
+
+    len = strftime(dest, maxsize, __getEstring3_a(format), timeptr);
+    if ((epoch = strstr(dest, "%s"))) {
+        char *res = __alloca(2 * maxsize),
+             epsec[11],
+             *cursor = dest,
+             *eos = &dest[len];
+        time_t secs = mktime((struct tm *)timeptr);
+        int l = 0;
+
+        sprintf(epsec, "%u", secs);
+        memset(res, 0, (2 * maxsize));
+
+        do {
+            /*
+             * Check for any leading characters
+             */
+            l = ((uintptr_t) epoch - (uintptr_t) cursor);
+            if (l > 0)
+                strncat(res, cursor, l);
+
+            /*
+             * Replace %s with epoch seconds
+             */
+            epoch += 2;
+            cursor = epoch;
+            strcat(res, epsec);
+
+            /*
+             * Check for any more %s instancs
+             */
+            epoch = strstr(cursor, "%s");
+        } while (epoch != NULL);
+
+        /*
+         * Handle any remaining characters
+         */
+        if (cursor < eos)
+            strcat(res, cursor);
+
+        /*
+         * Copy to result area and set length
+         */
+        strncpy(dest, res, maxsize - 1);
+        len = strlen(dest);
+    }
+
     if (len > 0)
         __toasciilen_a(dest, dest, len);
+    
     return(len);
 }
 /**

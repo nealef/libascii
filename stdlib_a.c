@@ -195,16 +195,16 @@ __getenv_ea(const char *varname)
 int 
 __mbtowc_a(wchar_t *pwc, const char *string, size_t n)
 {
-	return(mbtowc(pwc,(const char *) __getEstring1_a(string),n));
+	return(mbtowc(pwc, string, n));
 }                                                       
 
 /**
  * @brief Convert multibyte characters to wide characters
  */
-int 
+size_t
 __mbstowcs_a(wchar_t *pwc, const char *string, size_t n)       
 {                                                                
-	return (mbstowcs(pwc,(const char *) __getEstring1_a(string),n));
+    return(mbstowcs(pwc, string, n));
 }
 
 /**
@@ -216,8 +216,6 @@ __wctomb_a(char *pmb, wchar_t c)
     int len;
 
 	len = wctomb(pmb, c);
-//    if (len > 0)
-//        __toasciilen_a(pmb, pmb, len);
     return(len);
 }                                                       
 

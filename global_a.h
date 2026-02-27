@@ -26,6 +26,7 @@
        char *c = (char *) (d);		                    \
        fprintf(stderr, "%s - %p.%x\n", t, c, (l));	    \
        for (x = 0; x < (l);) {		                    \
+           fprintf(stderr, "%04x ", x);                 \
            for (y = 0; y < 16 & x < (l); x++, y++)		\
                fprintf(stderr, "%02x ",c[x]);		    \
            fputc('\n', stderr);                         \
@@ -167,7 +168,7 @@ __insertFD(int fd, char *path)
                     tag = 0;
             }
         } else {
-            if ((S_ISSOCK(info.st_mode)) || (S_ISFIFO(info.st_mode)))
+            if (S_ISSOCK(info.st_mode))
                 tag = 1;
             else 
                 tag = 0;
@@ -233,3 +234,52 @@ __deleteFD(int fd)
         last = fdxl;
     }
 }
+
+/**
+ * @brief Construct new argv or envp strings
+ */
+
+static inline char **
+mkNew(char **str)
+{
+    char **newStr = NULL;
+    int count;
+    
+    /*
+     * Count the strings
+     */
+    for (count = 0; str[count] != NULL; count++);
+
+    count++;    /* Add a spot for the NULL terminator */
+
+    newStr = malloc(count * sizeof(uintptr_t));
+
+    /*
+     * Copy and translate the strings
+     */
+    for (count = 0; str[count] != NULL; count++) {
+        newStr[count] = strdup(str[count]);
+        __toebcdic_a(newStr[count], newStr[count]);
+    }
+    newStr[count] = NULL;
+
+    return newStr;
+}
+
+/**
+ * @brief Free argv or envp strings
+ */
+static inline void
+freeNew(char **str)
+{
+    int i;
+
+    /*
+     * Free the strings
+     */
+    for (i = 0; str[i] != NULL; i++)
+        free(str[i]);
+    
+    free(str);      /* Free the array */
+}
+

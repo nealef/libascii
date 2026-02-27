@@ -37,6 +37,7 @@
 #pragma export(__getlogin_a)
 #pragma export(__getpass_a)
 #pragma export(__getwd_a)
+#pragma export(__getwd_o)
 #pragma export(__link_a)
 #pragma export(__pathconf_a)
 #pragma export(__read_a)
@@ -44,6 +45,7 @@
 #pragma export(__rmdir_a)
 #pragma export(__symlink_a)
 #pragma export(__truncate_a)
+#pragma export(__truncate_o)
 #pragma export(__ttyname_a)
 #pragma export(__unlink_a)
 #pragma export(__write_a)
@@ -62,6 +64,7 @@
 #pragma map(__getlogin_a, "\174\174A00261")
 #pragma map(__getpass_a, "\174\174A00263")
 #pragma map(__getwd_a, "\174\174A00197")
+#pragma map(__getwd_o, "GETWDOVRA")
 #pragma map(__link_a, "\174\174A00199")
 #pragma map(__pathconf_a, "\174\174A00200")
 #pragma map(__read_a, "READOVRA")
@@ -69,6 +72,7 @@
 #pragma map(__rmdir_a, "\174\174A00203")
 #pragma map(__symlink_a, "\174\174A00205")
 #pragma map(__truncate_a, "\174\174A00206")
+#pragma map(__truncate_o, "TRUNCOVRA")
 #pragma map(__ttyname_a, "\174\174A00034")
 #pragma map(__unlink_a, "\174\174A00207")
 #pragma map(__write_a, "WRITOVRA")
@@ -134,7 +138,17 @@ __ctermid_a(char *s)
 int 
 __execv_a(const char *path, char *const argv[])
 {
-	return execv((const char *) __getEstring1_a(path), argv);
+    char **newargv = mkNew(argv);
+    int rc;
+
+	rc = execv((const char *) __getEstring1_a(path), newargv);
+
+    /*
+     * We only return if the exec fails so free the argv memory
+     */
+    freeNew(newargv);
+
+    return rc;
 }
 
 /**
@@ -143,7 +157,19 @@ __execv_a(const char *path, char *const argv[])
 int 
 __execve_a(const char *path, char *const argv[], char *const envp[])
 {
-	return execve((const char *) __getEstring1_a(path), argv, envp);
+    char **newargv = mkNew(argv),
+         **newenvp = mkNew(envp);
+    int rc;
+
+	rc = execve((const char *) __getEstring1_a(path), newargv, newenvp);
+
+    /*
+     * We only return if the exec fails so free the argv & envp memory
+     */
+    freeNew(newargv);
+    freeNew(newenvp);
+
+    return rc;
 }
 
 /**
@@ -152,7 +178,17 @@ __execve_a(const char *path, char *const argv[], char *const envp[])
 int 
 __execvp_a(const char *file, char *const argv[])
 {
-	return execvp((const char *) __getEstring1_a(file), argv);
+    char **newargv = mkNew(argv);
+    int rc;
+
+	rc = execvp((const char *) __getEstring1_a(file), newargv);
+
+    /*
+     * We only return if the exec fails so free the argv memory
+     */
+    freeNew(newargv);
+
+    return rc;
 }
  
 /**
@@ -223,7 +259,16 @@ __getwd_a(char *path_name)
 
 	p = getcwd(path_name, 1024);
 	__toascii_a(p,p);
-	return(p);
+	return(path_name);
+}
+ 
+/**
+ * @brief Get working directory - override
+ */
+char *
+__getwd_o(char *path_name)
+{
+	return(__getwd_a(path_name));
 }
  
 /**
@@ -306,6 +351,15 @@ __truncate_a(char *path, off_t length)
     }
 
 	return rc;
+}
+
+/**
+ * @brief Truncate a file - override version
+ */
+int
+__truncate_o(char *path, off_t length)
+{
+    return(__truncate_a(path, length));
 }
  
 /**

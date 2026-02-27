@@ -45,18 +45,67 @@ __wcscoll_a(const wchar_t *wcs1, const wchar_t *wcs2)
 
 /**
  * @brief Format Date and Time
+ *
+ * The API doesn't support the epoch '%s' format so we have to do it
+ * ourselves.
  */
 size_t 
 __wcsftime_a(wchar_t *wcs, size_t maxsize, const wchar_t *format,
              const struct tm *time_ptr)
 {
-    size_t l;
+    size_t len;
+    wchar_t *epoch;
 
-    l = wcsftime(wcs, maxsize, __getEwstring3_a(format), time_ptr);
-    if (l > 0)
-        __towasciilen_a(wcs, wcs, l);
+    len = wcsftime(wcs, maxsize, __getEwstring3_a(format), time_ptr);
+    if ((epoch = wcsstr(wcs, L"%s"))) {
+        wchar_t *res = __alloca(4 * maxsize),
+                epsec[22],
+                *cursor = wcs,
+                *eos = &wcs[len];
+        time_t secs = mktime((struct tm *)time_ptr);
+        int l = 0;
 
-    return l;
+        swprintf(epsec, sizeof(epsec), L"%u", secs);
+        memset(res, 0, (4 * maxsize));
+
+        do {
+            /*
+             * Check for any leading characters
+             */
+            l = ((uintptr_t) epoch - (uintptr_t) cursor) / 2;
+            if (l > 0)
+                wcsncat(res, cursor, l);
+
+            /*
+             * Replace %s with epoch seconds
+             */
+            epoch += 2;
+            cursor = epoch;
+            wcscat(res, epsec);
+
+            /*
+             * Check for any more %s instancs
+             */
+            epoch = wcsstr(cursor, L"%s");
+        } while (epoch != NULL);
+
+        /*
+         * Handle any remaining characters
+         */
+        if (cursor < eos)
+            wcscat(res, cursor);
+
+        /*
+         * Copy to result area and set length
+         */
+        wcsncpy(wcs, res, maxsize - 2);
+        len = wcslen(wcs);
+    }
+
+    if (len > 0)
+        __towasciilen_a(wcs, wcs, len);
+
+    return len;
 }
 
 /**

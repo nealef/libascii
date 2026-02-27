@@ -36,30 +36,29 @@ __spawn_a(const char *pn, const int nFd, const int fdMap[],
           const struct inheritance *inherit, const char *args[],
           const char *env[])
 {
-	int nEnv = 0, iEnv;
-    char **newEnv = NULL;
+	int nArg = 0, iArg,
+	    nEnv = 0, iEnv;
+    char **newArg = NULL,
+         **newEnv = NULL;
     char *newPn;
     pid_t pid;
 
-    if (env != NULL) {
-        for (nEnv = 0; env[nEnv] != NULL; nEnv++);
-        nEnv++;
-        newEnv = malloc(nEnv * sizeof(uintptr_t));
-        newEnv[nEnv - 1] = NULL;
-	    for (iEnv = 0; env[nEnv] != NULL; iEnv)
-            newEnv[iEnv] = strdup(__getEstring1_a(env[iEnv]));
-    } 
+    if (env != NULL)
+        newEnv = mkNew(env);
+
+    if (args != NULL)
+        newArg = mkNew(args);
 
 	newPn = strdup(__getEstring1_a(pn));
 
     pid = spawn((const char *) newPn, nFd, fdMap, inherit, 
-                args, (const char **) newEnv);
+                newArg, (const char **) newEnv);
 
-    if (newEnv != NULL) {
-        for (iEnv = 0; iEnv < nEnv - 1; iEnv)
-            free(newEnv[iEnv]);
-        free(newEnv);
-    }
+    if (newArg != NULL)
+        freeNew(newArg);
+
+    if (newEnv != NULL)
+        freeNew(newEnv);
 
     free(newPn);
         
@@ -75,30 +74,29 @@ __spawnp_a(const char *fn, const int nFd, const int fdMap[],
            const struct inheritance *inherit, const char *args[],
            const char *env[])
 {
-	int nEnv = 0, iEnv;
-    char **newEnv = NULL;
+	int nArg = 0, iArg,
+	    nEnv = 0, iEnv;
+    char **newArg = NULL,
+         **newEnv = NULL;
     char *newFn;
     pid_t pid;
 
-    if (env != NULL) {
-        for (nEnv = 0; env[nEnv] != NULL; nEnv++);
-        nEnv++;
-        newEnv = malloc(nEnv * sizeof(uintptr_t));
-        newEnv[nEnv - 1] = NULL;
-	    for (iEnv = 0; env[nEnv] != NULL; iEnv)
-            newEnv[iEnv] = strdup(__getEstring1_a(env[iEnv]));
-    } 
+    if (env != NULL)
+        newEnv = mkNew(env);
+
+    if (args != NULL)
+        newArg = mkNew(args);
 
 	newFn = strdup(__getEstring1_a(fn));
 
     pid = spawnp((const char *) newFn, nFd, fdMap, inherit, 
-                args, (const char **) newEnv);
+                 newArg, (const char **) newEnv);
 
-    if (newEnv != NULL) {
-        for (iEnv = 0; iEnv < nEnv - 1; iEnv)
-            free(newEnv[iEnv]);
-        free(newEnv);
-    }
+    if (newArg != NULL)
+        freeNew(newArg);
+
+    if (newEnv != NULL)
+        freeNew(newEnv);
 
     free(newFn);
         
