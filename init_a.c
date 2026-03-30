@@ -125,6 +125,7 @@ __initASCIIlib_a()
 
     sa.sa_flags = SA_SIGINFO;
     sigemptyset(&sa.sa_mask);
+#if 0
     sa.sa_sigaction = handler;
     if (sigaction(SIGSEGV, &sa, NULL) == -1)
         perror("sigaction");
@@ -134,6 +135,7 @@ __initASCIIlib_a()
         perror("sigaction");
     if (sigaction(SIGABRT, &sa, NULL) == -1)
         perror("sigaction");
+#endif
 	return(atp);
 }
 
@@ -174,10 +176,11 @@ __panic_a(char *reason)
 	int	S_errno = errno;
 	int	S_errno2 = __errno2();
 
-	__cdump(reason);
-	fprintf(stderr, "Reason - %s\n");
+	fprintf(stderr, "Reason - %s\n", reason);
+    fprintf(stderr, "errno: %d errno2: %d\n", S_errno, S_errno2);
     if (S_errno != 0)
-        fprintf(stderr, "Error - %s (%d)\n",strerror(S_errno),S_errno);
+        fprintf(stderr, "Error - %s (%d)\n", strerror(S_errno), S_errno);
     fflush(stderr);
+	__cdump(reason);
     exit(S_errno);
 }

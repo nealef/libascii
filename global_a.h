@@ -26,14 +26,18 @@
        char *c = (char *) (d);		                    \
        fprintf(stderr, "%s - %p.%x\n", t, c, (l));	    \
        for (x = 0; x < (l);) {		                    \
+           fprintf(stderr, "%04x ", x);                 \
            for (y = 0; y < 16 & x < (l); x++, y++)		\
                fprintf(stderr, "%02x ",c[x]);		    \
            fputc('\n', stderr);                         \
        }		                                        \
    } while (0)
 
-#define DEBUG_PRINT(fmt, ...)   \
-        fprintf(stderr, "%s:%d - " fmt"\n", __func__, __LINE__, __VA_ARGS__)
+#define DEBUG_PRINT(fmt, ...) do {                      \
+        fprintf(stderr, "%s:%d - " fmt"\n",             \
+                __func__, __LINE__, __VA_ARGS__);       \
+        fflush(stderr);                                 \
+    } while (0)
 
 /**
  * We use the audit field of the stat structure to determine
@@ -139,6 +143,25 @@ __isAsciiFD(int fd)
 }
 
 /**
+ * @brief Indicate that a file requires translation
+ *
+ * @param fd File descriptor
+ * @param fd Data needs to be translated on read/write
+ */
+static inline void
+__setAsciiFD(int fd, int trans)
+{
+	ATHD_t *myathdp = athdp();
+    fdxl_t *fdxl;
+    struct stat st;
+
+    for (fdxl = myathdp->fdxl; fdxl != NULL; fdxl = fdxl->next) {
+        if (fd == fdxl->fd)
+            fdxl->ascii = trans;
+    }
+}
+
+/**
  * @brief Insert fd into the fdxl linked list
  *
  * @param fd File Descriptor
@@ -167,7 +190,7 @@ __insertFD(int fd, char *path)
                     tag = 0;
             }
         } else {
-            if ((S_ISSOCK(info.st_mode)) || (S_ISFIFO(info.st_mode)))
+            if (S_ISSOCK(info.st_mode))
                 tag = 1;
             else 
                 tag = 0;
@@ -233,3 +256,52 @@ __deleteFD(int fd)
         last = fdxl;
     }
 }
+
+/**
+ * @brief Construct new argv or envp strings
+ */
+
+static inline const char **
+mkNew(const char **str)
+{
+    const char **newStr = NULL;
+    int count;
+    
+    /*
+     * Count the strings
+     */
+    for (count = 0; str[count] != NULL; count++);
+
+    count++;    /* Add a spot for the NULL terminator */
+
+    newStr = malloc(count * sizeof(uintptr_t));
+
+    /*
+     * Copy and translate the strings
+     */
+    for (count = 0; str[count] != NULL; count++) {
+        newStr[count] = strdup(str[count]);
+        __toebcdic_a((char *) newStr[count], (char *) newStr[count]);
+    }
+    newStr[count] = NULL;
+
+    return newStr;
+}
+
+/**
+ * @brief Free argv or envp strings
+ */
+static inline void
+freeNew(const char **str)
+{
+    int i;
+
+    /*
+     * Free the strings
+     */
+    for (i = 0; str[i] != NULL; i++)
+        free((void *)str[i]);
+    
+    free(str);      /* Free the array */
+}
+

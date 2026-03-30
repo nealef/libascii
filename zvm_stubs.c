@@ -22,6 +22,7 @@
 #include <sys/resource.h>
 #include <pthread.h>
 #include <unistd.h>
+#include <fcntl.h>
 #include <grp.h>
 #include <errno.h>
 #include <sys/mman.h>
@@ -55,6 +56,7 @@
 #pragma export(__toCcsid)
 #pragma export(__toCSName)
 #pragma export(nanosleep)
+#pragma export(__select_ovr)
 
 #pragma map(__ae_autoconvert_state_a, "__ae_autoconvert_state")
 #pragma map(__closelog, "closelog")
@@ -76,6 +78,7 @@
 #pragma map(__syslog_a, "\174\174A00366")
 #pragma map(__toCcsid, "\174\174A00125")
 #pragma map(__toCSName, "\174\174A00126")
+#pragma map(__select_ovr, "SLCTOVRA")
 
 static int niceValue = 10;  /** simulated nice value */
 
@@ -458,4 +461,124 @@ nanosleep(const struct timespec *req, struct timespec *rem)
     }
 
     return rc;
+}
+
+/**
+ * @brief Front-end for select() to handle FIFOs which CMS doesn't
+ */
+int
+__select_ovr(int max, fd_set *r, fd_set *w, fd_set *x, struct timeval *t)
+{
+    int fd,
+        nmax = 0,
+        found = 0,
+        res;
+    fd_set *rr = NULL, 
+           *ww = NULL,
+           *xx = NULL;
+
+    /** 
+     * Allocate shadow fd_sets for non-FIFOs
+     */
+    if (r) {
+        rr = __alloca(sizeof(fd_set));
+        FD_ZERO(&rr);
+    }
+    if (w) {
+        ww = __alloca(sizeof(fd_set));
+        FD_ZERO(&ww);
+    }
+    if (x) {
+        xx = __alloca(sizeof(fd_set));
+        FD_ZERO(&xx);
+    }
+
+    /**
+     * Search for FIFOs in the sets. Set shadows for non-FIFOS
+     */
+    for (fd = 0; fd < max; fd++) {
+        struct stat st;
+        int flags;
+
+        if ((r != NULL) && (FD_ISSET(fd, r))) {
+            fstat(fd, &st);
+            if (S_ISFIFO(st.st_mode)) {
+                found++;
+                flags = fcntl(fd, F_GETFL);
+                fcntl(fd, F_SETFL, (flags & ~O_NONBLOCK));
+            } else
+                FD_SET(fd, rr);
+        } 
+
+        if ((w != NULL) && (FD_ISSET(fd, w))) {
+            fstat(fd, &st);
+            if (S_ISFIFO(st.st_mode))
+                found++;
+            else
+                FD_SET(fd, ww);
+        } 
+        
+        if ((x != NULL) && (FD_ISSET(fd, x))) {
+            fstat(fd, &st);
+            if (S_ISFIFO(st.st_mode))
+                found++;
+            else
+                FD_SET(fd, xx);
+        }
+    }
+
+    /**
+     * If no FIFOs were found then just run the select as is
+     */
+    if (!found) {
+        return select(max, r, w, x, t);
+    } else {
+        /**
+         * Otherwise construct a new select() for any non-FIFOs
+         */
+        for (fd = 0; fd < max; fd++) {
+
+            if ((rr) && (FD_ISSET(fd, rr)))
+                if (fd > (nmax + 1))
+                    nmax = fd + 1;
+
+            if ((ww) && (FD_ISSET(fd, ww)))
+                if (fd > (nmax + 1))
+                    nmax = fd + 1;
+
+            if ((xx) && (FD_ISSET(fd, xx)))
+                if (fd > (nmax + 1))
+                    nmax = fd + 1;
+        }
+
+        /**
+         * If non-FIFOs found then run a select() with an (almost) immediate
+         * return just so any fds that were ready are captured
+         */
+        if (nmax > 0) {
+            struct timeval tt;
+
+            tt.tv_sec = 0;
+            tt.tv_usec = 1;
+            res = select(nmax, rr, ww, xx, &tt);
+            if (res > 0) {
+                /**
+                 * Update the real fd_sets with the results of the
+                 * shadow select
+                 */
+                for (fd = 0; fd < nmax; fd++) {
+                    if ((rr) && FD_ISSET(fd, rr))
+                        FD_SET(fd, r);
+                    if ((ww) && FD_ISSET(fd, ww))
+                        FD_SET(fd, w);
+                    if ((xx) && FD_ISSET(fd, xx))
+                        FD_SET(fd, x);
+                }
+                res += found;
+            }
+        } else
+            res = found;
+
+        return res;
+    }
 }
