@@ -125,6 +125,7 @@ __initASCIIlib_a()
 
     sa.sa_flags = SA_SIGINFO;
     sigemptyset(&sa.sa_mask);
+#if 0
     sa.sa_sigaction = handler;
     if (sigaction(SIGSEGV, &sa, NULL) == -1)
         perror("sigaction");
@@ -134,6 +135,7 @@ __initASCIIlib_a()
         perror("sigaction");
     if (sigaction(SIGABRT, &sa, NULL) == -1)
         perror("sigaction");
+#endif
 	return(atp);
 }
 

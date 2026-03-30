@@ -33,8 +33,11 @@
        }		                                        \
    } while (0)
 
-#define DEBUG_PRINT(fmt, ...)   \
-        fprintf(stderr, "%s:%d - " fmt"\n", __func__, __LINE__, __VA_ARGS__)
+#define DEBUG_PRINT(fmt, ...) do {                      \
+        fprintf(stderr, "%s:%d - " fmt"\n",             \
+                __func__, __LINE__, __VA_ARGS__);       \
+        fflush(stderr);                                 \
+    } while (0)
 
 /**
  * We use the audit field of the stat structure to determine
@@ -140,6 +143,25 @@ __isAsciiFD(int fd)
 }
 
 /**
+ * @brief Indicate that a file requires translation
+ *
+ * @param fd File descriptor
+ * @param fd Data needs to be translated on read/write
+ */
+static inline void
+__setAsciiFD(int fd, int trans)
+{
+	ATHD_t *myathdp = athdp();
+    fdxl_t *fdxl;
+    struct stat st;
+
+    for (fdxl = myathdp->fdxl; fdxl != NULL; fdxl = fdxl->next) {
+        if (fd == fdxl->fd)
+            fdxl->ascii = trans;
+    }
+}
+
+/**
  * @brief Insert fd into the fdxl linked list
  *
  * @param fd File Descriptor
@@ -239,10 +261,10 @@ __deleteFD(int fd)
  * @brief Construct new argv or envp strings
  */
 
-static inline char **
-mkNew(char **str)
+static inline const char **
+mkNew(const char **str)
 {
-    char **newStr = NULL;
+    const char **newStr = NULL;
     int count;
     
     /*
@@ -259,7 +281,7 @@ mkNew(char **str)
      */
     for (count = 0; str[count] != NULL; count++) {
         newStr[count] = strdup(str[count]);
-        __toebcdic_a(newStr[count], newStr[count]);
+        __toebcdic_a((char *) newStr[count], (char *) newStr[count]);
     }
     newStr[count] = NULL;
 
@@ -270,7 +292,7 @@ mkNew(char **str)
  * @brief Free argv or envp strings
  */
 static inline void
-freeNew(char **str)
+freeNew(const char **str)
 {
     int i;
 
@@ -278,7 +300,7 @@ freeNew(char **str)
      * Free the strings
      */
     for (i = 0; str[i] != NULL; i++)
-        free(str[i]);
+        free((void *)str[i]);
     
     free(str);      /* Free the array */
 }

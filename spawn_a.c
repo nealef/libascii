@@ -19,6 +19,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
+#include <fcntl.h>
 #include "global_a.h"
 
 #pragma export(__spawn_a)
@@ -36,10 +37,8 @@ __spawn_a(const char *pn, const int nFd, const int fdMap[],
           const struct inheritance *inherit, const char *args[],
           const char *env[])
 {
-	int nArg = 0, iArg,
-	    nEnv = 0, iEnv;
-    char **newArg = NULL,
-         **newEnv = NULL;
+    const char **newArg = NULL,
+               **newEnv = NULL;
     char *newPn;
     pid_t pid;
 
@@ -74,10 +73,8 @@ __spawnp_a(const char *fn, const int nFd, const int fdMap[],
            const struct inheritance *inherit, const char *args[],
            const char *env[])
 {
-	int nArg = 0, iArg,
-	    nEnv = 0, iEnv;
-    char **newArg = NULL,
-         **newEnv = NULL;
+    const char **newArg = NULL,
+               **newEnv = NULL;
     char *newFn;
     pid_t pid;
 

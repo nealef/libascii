@@ -21,6 +21,7 @@
 #include <stdint.h>
 #include <fcntl.h>
 #include <pwd.h>
+#include <errno.h>
 #include "global_a.h"
  
 #pragma export(__access_a)
@@ -136,9 +137,9 @@ __ctermid_a(char *s)
  * @brief Execute a process - arguments no environment
  */
 int 
-__execv_a(const char *path, char *const argv[])
+__execv_a(const char *path, char * const *argv)
 {
-    char **newargv = mkNew(argv);
+    char * const *newargv = (char * const *)mkNew((const char **)argv);
     int rc;
 
 	rc = execv((const char *) __getEstring1_a(path), newargv);
@@ -146,7 +147,7 @@ __execv_a(const char *path, char *const argv[])
     /*
      * We only return if the exec fails so free the argv memory
      */
-    freeNew(newargv);
+    freeNew((const char **)newargv);
 
     return rc;
 }
@@ -155,10 +156,10 @@ __execv_a(const char *path, char *const argv[])
  * @brief Execute a process - arguments and environment
  */
 int 
-__execve_a(const char *path, char *const argv[], char *const envp[])
+__execve_a(const char *path, char * const *argv, char * const *envp)
 {
-    char **newargv = mkNew(argv),
-         **newenvp = mkNew(envp);
+    char * const *newargv = (char * const *)mkNew((const char **)argv);
+    char * const *newenvp = (char * const *)mkNew((const char **)envp);
     int rc;
 
 	rc = execve((const char *) __getEstring1_a(path), newargv, newenvp);
@@ -166,8 +167,8 @@ __execve_a(const char *path, char *const argv[], char *const envp[])
     /*
      * We only return if the exec fails so free the argv & envp memory
      */
-    freeNew(newargv);
-    freeNew(newenvp);
+    freeNew((const char **)newargv);
+    freeNew((const char **)newenvp);
 
     return rc;
 }
@@ -176,9 +177,9 @@ __execve_a(const char *path, char *const argv[], char *const envp[])
  * @brief Execute a process using search path - arguments no environment
  */
 int 
-__execvp_a(const char *file, char *const argv[])
+__execvp_a(const char *file, char * const *argv)
 {
-    char **newargv = mkNew(argv);
+    char * const *newargv = (char * const *)mkNew((const char **)argv);
     int rc;
 
 	rc = execvp((const char *) __getEstring1_a(file), newargv);
@@ -186,7 +187,7 @@ __execvp_a(const char *file, char *const argv[])
     /*
      * We only return if the exec fails so free the argv memory
      */
-    freeNew(newargv);
+    freeNew((const char **)newargv);
 
     return rc;
 }
@@ -400,6 +401,7 @@ __read_a(int fd, void *buf, size_t len)
     ssize_t res;
 
     res = read(fd, buf, len);
+
     if (res > 0) {
         if (!__isAsciiFD(fd)) {
             __toasciilen_a(buf, buf, res);

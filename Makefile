@@ -47,4 +47,6 @@ clean:
 dist:	libascii.tar.gz
 		tar -czf $@ LICENSE Makefile *.c *.h samples/*.c
 
+install : libascii.a libascii.so libascii.x
+	@cp $^ /usr/local/lib
 ##### END OF FILE #####
