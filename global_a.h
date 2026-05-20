@@ -105,6 +105,7 @@ struct ATHD {
     int          prvcsstate;   /* Previous ccsid conversion state */
     fdxl_t       *fdxl;        /* root of fd translation lookup table */
     hashTable_t  *envtbl;      /* Hash table for caching ASCII versions of env vars */
+    int          isVM;         /* Running under z/VM or not */
 };
 
 typedef struct ATHD ATHD_t;

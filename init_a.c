@@ -14,6 +14,7 @@
 #include <errno.h>
 #include <signal.h>
 #include <ctest.h>
+#include <sys/utsname.h>
 #include "global_a.h"
 #include "envtable.h"
 
@@ -75,6 +76,7 @@ __initASCIIlib_a()
 	ATHD_t *atp;
 	int athdsz;
     struct sigaction sa;
+    struct utsname ut;
 
 	/* Perform key create for process if necessary */
 	if (keyptr == (pthread_key_t *) NULL) {
@@ -123,9 +125,11 @@ __initASCIIlib_a()
     atp->envtbl = malloc(sizeof(hashTable_t));
     htInitTable(atp->envtbl);
 
-    sa.sa_flags = SA_SIGINFO;
+    uname(&ut);
+    atp->isVM = strcmp(ut.sysname, "z/VM");
+
+    sa.sa_flags = 0;
     sigemptyset(&sa.sa_mask);
-#if 0
     sa.sa_sigaction = handler;
     if (sigaction(SIGSEGV, &sa, NULL) == -1)
         perror("sigaction");
@@ -135,7 +139,6 @@ __initASCIIlib_a()
         perror("sigaction");
     if (sigaction(SIGABRT, &sa, NULL) == -1)
         perror("sigaction");
-#endif
 	return(atp);
 }
 

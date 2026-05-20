@@ -21,13 +21,13 @@ SHLDFLAGS = -O -g -qxplink -qdll -Wl,dll -q32
 OBJS	= ctest_a.o ctype_a.o dirent_a.o dlfcn_a.o dll_a.o dynit_a.o  \
 		  envtable.o fcntl_a.o fnmatch_a.o glob_a.o grp_a.o iconv_a.o \
 		  if_a.o inet_a.o ipc_a.o langin_a.o locale_a.o init_a.o \
-		  math_a.o netdb2_a.o nl_typ_a.o pthread_a.o print_a.o \
+		  math_a.o ndbm_a.o netdb2_a.o nl_typ_a.o pthread_a.o print_a.o \
 		  pwd_a.o regex_a.o rexec_a.o scanf_a.o spawn_a.o socket_a.o \
 		  stat_a.o stdio_a.o stdlib_a.o string_a.o time_a.o termios_a.o \
 		  trans_a.o unistd_a.o utime_a.o utsnam_a.o wchar_a.o zvm_stubs.o
 
 
-all		: 	libascii.a libascii.so
+all		: 	libascii.a libascii.so libascii_zos.so libzvmsuv3.so
 
 # Define archive dependencies and archive command
 libascii.a	: $(OBJS) _Ascii_a.h global_a.h
@@ -35,6 +35,12 @@ libascii.a	: $(OBJS) _Ascii_a.h global_a.h
 
 libascii.so : $(OBJS) _Ascii_a.h global_a.h
 			  $(CC) $(SHLDFLAGS) -o $@ $(OBJS)
+
+libascii_zos.so : zos_stubs.o
+			  $(CC) $(SHLDFLAGS) -o $@ $^
+
+libzvmsuv3.so : zvm_suv3.o pthread_a.o
+			  $(CC) $(SHLDFLAGS) -o $@ $^
 
 # Define compile dependencies and command for each part
 .c.o		: 
@@ -47,6 +53,8 @@ clean:
 dist:	libascii.tar.gz
 		tar -czf $@ LICENSE Makefile *.c *.h samples/*.c
 
-install : libascii.a libascii.so libascii.x
+install : libascii.so libascii.x libascii_zos.so libascii_zos.x
+	@rm -f /usr/local/lib/libascii*
 	@cp $^ /usr/local/lib
+
 ##### END OF FILE #####

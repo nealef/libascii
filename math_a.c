@@ -30,14 +30,34 @@
 #define SIGNBIT     5
 #define ISNAN       6
            
+/**
+ * Rounding modes
+ */
+#ifndef FE_TONEAREST
+#  define FE_TOWARDZERO 0
+#  define FE_TONEAREST  1
+#  define FE_UPWARD     2
+#  define FE_DOWNWARD   3
+#endif
+
 #pragma export(__class_a)
 #pragma export(__round_a)
 #pragma export(__roundf_a)
 #pragma export(__roundl_a)
-#if 0
 #pragma export(__lround_a)
 #pragma export(__lroundf_a)
 #pragma export(__lroundl_a)
+#pragma export(__fesetround_a)
+#pragma export(__fegetround_a)
+#pragma export(__fabsf_a)
+#pragma export(__fabsl_a)
+#pragma export(__erff_a)
+#pragma export(__erfcf_a)
+#pragma export(__erfl_a)
+#pragma export(__erfcl_a)
+#pragma export(__lgammaf_a)
+#pragma export(__lgammal_a)
+#if 0
 #pragma export(__llround_a)
 #pragma export(__llroundf_a)
 #pragma export(__llroundl_a)
@@ -47,6 +67,21 @@
 #pragma map(__round_a, "\174\174ROUN\174B")
 #pragma map(__roundf_a, "\174\174ROUNFB")   
 #pragma map(__roundl_a, "\174\174ROUNLB")   
+#pragma map (__lround_a, "LROUND")
+#pragma map (__lroundf_a, "LROUNDF")
+#pragma map (__lroundl_a, "LROUNDL")
+#pragma map (__fesetround_a, "fesetround")
+#pragma map (__fegetround_a, "fegetround")
+#pragma map (__fabsf_a, "FABSF")
+#pragma map (__fabsl_a, "FABSL")
+#pragma map (__erff_a, "\174\174FERF\174B")
+#pragma map (__erfcf_a, "\174\174FEFC\174B")
+#pragma map (__erfl_a, "\174\174LERF\174B")
+#pragma map (__erfcl_a, "\174\174LEFC\174B")
+#pragma map (__lgammaf_a, "\174\174FLGA\174B")
+#pragma map (__lgammal_a, "\174\174LLGA\174B")
+
+static int roundingMode = 0;
 
 /*%PAGE																*/
 /**
@@ -295,4 +330,200 @@ __roundl_a(double g)
          : "=m" (r.d[0]), "=m" (r.d[1]) : : "cc");
     
     return r.res;
+}
+
+/**
+ * @brief Round a double to long int
+ */
+long int
+__lround_a(double g)
+{
+    long int r;
+
+    asm ("  CGDBR   0,1,0\n"
+         "  STG     0,%0\n"
+         : "=m" (r) : : "cc");
+    
+    return r;
+}
+
+/**
+ * @brief Round a float to long int
+ */
+long int
+__lroundf_a(float g)
+{
+    long int r;
+
+    asm ("  CGEBR   0,1,0\n"
+         "  STG     0,%0\n"
+         : "=m" (r) : : "cc");
+    
+    return r;
+}
+
+/**
+ * @brief Round a long double to long int
+ */
+long int
+__lroundl_a(long double g)
+{
+    long int r;
+
+    asm ("  CGXBR   0,1,0\n"
+         "  STG     0,%0\n"
+         : "=m" (r) : : "cc");
+    
+    return r;
+}
+
+/**
+ * @brief Set the rounding mode
+ */
+int
+__fesetround_a(int mode)
+{
+    switch (mode) {
+        case FE_TONEAREST:
+        case FE_UPWARD: 
+        case FE_DOWNWARD:
+        case FE_TOWARDZERO:
+            roundingMode = mode;
+            return 0;
+            break;
+        default :
+            return -1;
+    }
+}
+
+/**
+ * @brief Round a long double to long int
+ */
+int
+__fegetround_a()
+{
+    return roundingMode;
+}
+
+/**
+ * @brief Return absolute value of float
+ */
+float
+__fabsf_a(float a)
+{
+    return (float)(fabs((double)a));
+}
+
+/**
+ * @brief Return absolute value of long double
+ */
+float
+__fabsl_a(float a)
+{
+    union {
+        long double res;
+        double d[2];
+    } r;
+
+    asm ("  LPXBR   0,0\n"
+         "  STDY    0,%0\n"
+         "  STDY    2,%1\n"
+         : "=m" (r.d[0]), "=m" (r.d[1]) : : "cc");
+
+    return r.res;
+}
+
+#undef lgamma
+
+/**
+ * @brief Return log gamma of float
+ */
+float
+__lgammaf_a(float a)
+{
+    return (float)(lgamma((double)a));
+}
+
+/**
+ * @brief Return log gamma of long double
+ * * For large positive values of x, we use Stirling's approximation 
+ * to maintain high precision:
+ * ln Gamma(x) ^42^29^28 (x - 0.5)ln(x) - x + 0.5ln(2^77^20) + 1/(12x) - 1/(360x^3)
+ */
+long double
+__lgammal_a(long double x)
+{
+    // Stirling's approximation is very accurate for larger x
+    if (x > 8.0L) {
+        const long double LOG_SQRT_TWO_PI = 0.9189385332046727417803297364056176L;
+        long double x_inv = 1.0L / x;
+        long double x_inv2 = x_inv * x_inv;
+        
+        long double res = (x - 0.5L) * logl(x) - x + LOG_SQRT_TWO_PI;
+        res += (x_inv / 12.0L) - (x_inv2 * x_inv / 360.0L);
+        return res;
+    }
+
+    // Fallback to double-precision lgamma for smaller or negative values.
+    // Note: lgamma(x) handles the sign of the gamma function via the global 'signgam'.
+    return (long double)lgamma((double)x);
+}
+
+/**
+ * @brief Return the error function for float
+ */
+float
+__erff_a(float a)
+{
+    return (float)(erf((double)a));
+}
+
+/**
+ * @brief Return the complementary error function for float
+ */
+float
+__erfcf_a(float a)
+{
+    return (float)(erfc((double)a));
+}
+
+/**
+ * @brief Return the error function for long double
+ */
+long double
+__erfl_a(long double x)
+{
+    // For very small x, the Taylor series is highly accurate and efficient
+    if (fabsl(x) < 1.0L) {
+        long double sum = x;
+        long double term = x;
+        long double x2 = x * x;
+        
+        // 2 / sqrt(pi) in long double precision
+        const long double TWO_OVER_SQRT_PI = 1.1283791670955125738961589031215452L;
+
+        for (int n = 1; n < 50; n++) {
+            term *= -x2 / n;
+            long double next_term = term / (2 * n + 1);
+            sum += next_term;
+            if (fabsl(next_term) < 1e-20L) break; // Precision threshold
+        }
+        return TWO_OVER_SQRT_PI * sum;
+    }
+
+    // Fallback: For larger x, if we don't have a long-double continued fraction
+    // implementation, we use the double-precision erf().
+    // Note: This loses precision beyond the 15-17 decimal digits of a double.
+    return (long double)erf((double)x);
+}
+
+/**
+ * @brief Return the complementary error function for float
+ */
+long double
+__erfcl_a(long double a)
+{
+    static long double one = 1.0;
+
+    return (one - erfl(a));
 }

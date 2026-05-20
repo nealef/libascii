@@ -32,17 +32,23 @@ struct sockaddr_iucv {
 };                                                                  
 
 #pragma export(__getsockname_a)
+#pragma export(__getpeername_a)
 #pragma export(__connect_a)
 #pragma export(__bind_a)
 #pragma export(__accept_a)
 #pragma export(__recvfrom_a)
+#pragma export(__recvmsg_a)
+#pragma export(__sendmsg_a)
 #pragma export(__sendto_a)
 
 #pragma map(__getsockname_a,  "\174\174A00409")
 #pragma map(__connect_a,      "\174\174A00407")
+#pragma map(__getpeername_a,  "\174\174A00408")
 #pragma map(__bind_a,         "\174\174A00406")
 #pragma map(__accept_a,       "\174\174A00404")
 #pragma map(__recvfrom_a,     "\174\174A00410")
+#pragma map(__recvmsg_a,      "\174\174A00413")
+#pragma map(__sendmsg_a,      "\174\174A00412")
 #pragma map(__sendto_a,       "\174\174A00411")
 
 /*%PAGE                                                             */
@@ -63,6 +69,43 @@ __getnameinfo_a(const struct sockaddr *addr, socklen_t addrlen,
         if (servlen > 0)
             __toasciilen_a(host, host, hostlen);
     }
+    return rc;
+}
+
+/**
+ * @brief Get peer name
+ */
+int 
+__getpeername_a(int sd, struct sockaddr *address, socklen_t *address_len)
+{
+    int rc;
+    struct sockaddr_in *in;
+    struct sockaddr_in6 *i6;
+    struct sockaddr_un *un;
+    struct sockaddr_iucv *iu;
+
+    rc = getpeername(sd, address, address_len);
+    if (rc == 0) {
+        switch(address->sa_family) {
+            case AF_INET : 
+                in = (struct sockaddr_in *) address;
+                break;
+            case AF_INET6 :
+                i6 = (struct sockaddr_in6 *) address;
+                break;
+            case AF_UNIX :
+                un = (struct sockaddr_un *) address;
+                __toascii_a(un->sun_path, un->sun_path);
+                break;
+            case AF_IUCV :
+                iu = (struct sockaddr_iucv *) address;
+                __toasciilen_a(iu->siucv_nodeid, iu->siucv_nodeid, sizeof(iu->siucv_nodeid));
+                __toasciilen_a(iu->siucv_userid, iu->siucv_userid, sizeof(iu->siucv_userid));
+                __toasciilen_a(iu->siucv_name, iu->siucv_name, sizeof(iu->siucv_name));
+                break;
+        }
+    }
+
     return rc;
 }
 
@@ -254,6 +297,28 @@ __recvfrom_a(int sd, void *buffer, size_t length, int flags,
     }
 
     return rc;
+}
+
+/**
+ * @brief Receive message
+ */
+ssize_t
+__recvmsg_a(int sockfd, struct msghdr *msg, int flags)
+{
+    if (msg != NULL) {
+    }
+    return recvmsg(sockfd, msg, flags);
+}
+
+/**
+ * @brief Send message
+ */
+ssize_t
+__sendmsg_a(int sockfd, struct msghdr *msg, int flags)
+{
+    if (msg != NULL) {
+    }
+    return sendmsg(sockfd, msg, flags);
 }
 
 /**

@@ -26,7 +26,6 @@
 #include <grp.h>
 #include <errno.h>
 #include <sys/mman.h>
-#include <pthread.h>
 #include <_Ccsid.h>
 #include <_Nascii.h>
 
@@ -57,6 +56,8 @@
 #pragma export(__toCSName)
 #pragma export(nanosleep)
 #pragma export(__select_ovr)
+#pragma export(modf)
+#pragma export(modfl)
 
 #pragma map(__ae_autoconvert_state_a, "__ae_autoconvert_state")
 #pragma map(__closelog, "closelog")
@@ -581,4 +582,40 @@ __select_ovr(int max, fd_set *r, fd_set *w, fd_set *x, struct timeval *t)
 
         return res;
     }
+}
+
+/**
+ * @brief Implement modf() API
+ */
+double 
+modf(double x, double *iptr) 
+{
+    // fmod(x, 1.0) returns the remainder of x / 1.0.
+    // This is mathematically equivalent to the fractional part of x.
+    double fractional_part = fmod(x, 1.0);
+    
+    // The integral part is simply the original number minus the fractional part.
+    if (iptr) {
+        *iptr = x - fractional_part;
+    }
+    
+    return fractional_part;
+}
+
+/**
+ * @brief Implement modfl() API
+ */
+long double 
+modfl(long double x, long double *iptr) 
+{
+    // fmodl(x, 1.0) returns the remainder of x / 1.0.
+    // This is mathematically equivalent to the fractional part of x.
+    long double fractional_part = fmodl(x, 1.0);
+    
+    // The integral part is simply the original number minus the fractional part.
+    if (iptr) {
+        *iptr = x - fractional_part;
+    }
+    
+    return fractional_part;
 }

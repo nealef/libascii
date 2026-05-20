@@ -85,6 +85,7 @@
 
 #pragma export(__pthread_key_delete)
 #pragma export(__pthread_sigmask)
+#pragma export(__pthread_sigmask_zvm)
 #pragma export(pthread_atexit_zvm)
 #pragma export(pthread_atfork_zvm)
 #pragma export(pthread_key_delete_zvm)
@@ -92,6 +93,7 @@
 
 #pragma map(__pthread_key_delete,              "@@PT@KD")
 #pragma map(__pthread_sigmask,                 "@@PT@SM")
+#pragma map(__pthread_sigmask_zvm,             "pthread_sigmask")
 #pragma map(pthread_atexit_zvm,                "pthread_atexit")
 #pragma map(pthread_atfork_zvm,                "pthread_atfork")
 #pragma map(pthread_key_delete_zvm,            "pthread_key_delete")
@@ -449,13 +451,23 @@ pthread_key_delete_zvm(pthread_key_t key)
 }
 
 /**
- * @brief pthread_sigmask stub
+ * @brief pthread_sigmask - use sigprocmask
  *
  */
 int
 __pthread_sigmask(int how, const sigset_t *set, sigset_t *oldset)
 {
-    return 0;
+    return sigprocmask(how, set, oldset);
+}
+
+/**
+ * @brief pthread_sigmask - use sigprocmask
+ *
+ */
+int
+__pthread_sigmask_zvm(int how, const sigset_t *set, sigset_t *oldset)
+{
+    return sigprocmask(how, set, oldset);
 }
 
 /**
