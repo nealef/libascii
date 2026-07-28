@@ -15,9 +15,12 @@
  *              All rights reserved.                                *
  ********************************************************************/
 
-#include <time.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
+#include <sys/time.h>
+#include <errno.h>
 #include "global_a.h"
 
 #pragma export(__asctime_a)
@@ -31,6 +34,7 @@
 #pragma export(__strftime_a)
 #pragma export(__tzset_a)
 #pragma export(__tzznA_a)
+#pragma export(__futimes)
 
 #pragma map(__asctime_a, "\174\174A00324")
 #pragma map(__ctime_a, "\174\174A00325")
@@ -43,6 +47,7 @@
 #pragma map(__strftime_a, "\174\174A00095")
 #pragma map(__tzset_a, "\174\174A00327")
 #pragma map(__tzznA_a, "\174\174TZZNA")
+#pragma map(__futimes, "futimes")
 
 /*%PAGE																*/
 /**
@@ -238,4 +243,33 @@ int
 __gettimeofday_a(struct timeval *tp, struct timezone *tzp)
 {
     return gettimeofday(tp, tzp);
+}
+
+/**
+ * @brief Implement futimes() API
+ */
+int 
+__futimes(int fd, const struct timeval tv[2])
+{
+    FILE *stream;
+    fldata_t fileInfo;
+    char fileName[FILENAME_MAX];
+    int rc = -1, f;
+
+    memset(fileName, 0, sizeof(fileName));
+    if ((f = dup(fd)) != -1) {
+        stream = fdopen(f, "r");
+        if (stream != NULL) {
+            if (fldata(stream, fileName, &fileInfo) == 0) {
+                if (fileName[0] != 0) {
+                    rc = utimes(fileName, tv);
+                } else {
+                    errno = EBADF;
+                }
+            }
+            fclose(stream);
+        }
+        close(f);
+    }
+    return rc;
 }

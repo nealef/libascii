@@ -2,7 +2,7 @@
  * @file zvm_stubs.c
  * @brief Contains missing APIs for z/VM OpenEdition
  * 
- * Notes	:	All the procedures are name "__xxxxxxxx_a" where
+ * Notes	:	All the procedures are name "__xxxxxxxx" where
  *				xxxxxxxx is the name of the standard C run-time
  *				function name. Unless otherwise noted, all functions
  * 				take the same argument,produce the same output and
@@ -15,9 +15,12 @@
  *              All rights reserved.                                *
  ********************************************************************/
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <syslog.h>
 #include <signal.h>
+#include <string.h>
+#include <strings.h>
 #include <sys/time.h>
 #include <sys/resource.h>
 #include <pthread.h>
@@ -25,17 +28,17 @@
 #include <fcntl.h>
 #include <grp.h>
 #include <errno.h>
+#include <sys/stat.h>
 #include <sys/mman.h>
+#include <pthread.h>
 #include <_Ccsid.h>
-#include <_Nascii.h>
-
 #include "global_a.h"
 
-#pragma export(__ae_autoconvert_state_a)
 #pragma export(__closelog)
-#pragma export(__crypt_a)
+#pragma export(__crypt)
 #pragma export(__endgrent)
-#pragma export(__getgrent_a)
+#pragma export(__getgrent)
+#pragma export(__getlogin2)
 #pragma export(__getrusage)
 #pragma export(__mmap)
 #pragma export(__msync)
@@ -43,28 +46,25 @@
 #pragma export(__nice)
 #pragma export(__openlog)
 #pragma export(__sched_yield)
-#pragma export(set_tag_fd_binary)
-#pragma export(set_tag_fd_text)
-#pragma export(set_tag_fd_text_ro)
 #pragma export(__setgrent)
 #pragma export(__setgroups)
 #pragma export(__setlogmask)
-#pragma export(__setlogmask_a)
 #pragma export(__shm_open)
 #pragma export(__shm_unlink)
-#pragma export(__syslog_o)
+#pragma export(__mysyslog)
 #pragma export(__toCcsid)
 #pragma export(__toCSName)
 #pragma export(nanosleep)
 #pragma export(__select_ovr)
 #pragma export(modf)
 #pragma export(modfl)
+#pragma export(futimes)
 
-#pragma map(__ae_autoconvert_state_a, "__ae_autoconvert_state")
 #pragma map(__closelog, "closelog")
-#pragma map(__crypt_a, "\174\174A00367")
+#pragma map(__crypt, "\174\174A00367")
 #pragma map(__endgrent, "endgrent")
-#pragma map(__getgrent_a, "\174\174A00253")
+#pragma map(__getgrent, "\174\174A00253")
+#pragma map(__getlogin2, "\174\174GETLG2")
 #pragma map(__getrusage, "@@GRUSE")
 #pragma map(__mmap, "mmap")
 #pragma map(__msync, "msync")
@@ -75,13 +75,15 @@
 #pragma map(__setgrent, "setgrent")
 #pragma map(__setgroups, "@@SETGRP")
 #pragma map(__setlogmask, "setlogmask")
-#pragma map(__setlogmask_a, "\174\174SLOGM")
 #pragma map(__shm_open, "shm_open")
 #pragma map(__shm_unlink, "shm_unlink")
-#pragma map(__syslog_o, "syslog")
+#pragma map(__mysyslog, "syslog")
 #pragma map(__toCcsid, "\174\174A00125")
 #pragma map(__toCSName, "\174\174A00126")
 #pragma map(__select_ovr, "SLCTOVRA")
+#pragma map(__futimes, "futimes")
+
+void *valloc(size_t);
 
 static int niceValue = 10;  /** simulated nice value */
 
@@ -103,97 +105,23 @@ init_z_handler()
  
 /*%PAGE																*/
 /**
- * @brief Set/query conversion state
- */
-int
-__ae_autoconvert_state_a(int cmd)
-{
-    ATHD_t *myathdp;
-    myathdp = athdp();
-    int curState = myathdp->csstate;
-
-    switch(cmd) {
-    case _CVTSTATE_QUERY :
-        return myathdp->csstate;
-        break;
-    case _CVTSTATE_OFF :
-        myathdp->prvcsstate = myathdp->csstate;
-    case _CVTSTATE_ON :
-    case _CVTSTATE_ALL :
-        myathdp->csstate = cmd;
-        break;
-    case _CVTSTATE_SWAP :
-        if (myathdp->csstate == _CVTSTATE_OFF) {
-            myathdp->csstate = myathdp->prvcsstate;
-            myathdp->prvcsstate = _CVTSTATE_OFF;
-        } else {
-            myathdp->prvcsstate = myathdp->csstate;
-            myathdp->csstate = _CVTSTATE_OFF;
-        }
-        break;
-    default:
-        errno = EINVAL;
-        return -1;
-    }
-    return curState;
-}
-
-/**
  * @brief getgrent stub
  *
  */
 struct group *
-__getgrent_a()
+__getgrent()
 {
     return NULL;
 }
 
 /**
- * @brief set conversion mode to binary
+ * @brief getlogin2 stub
+ *
  */
-void
-set_tag_fd_binary(int fd)
+char *
+__getlogin2(char *buf)
 {
-	ATHD_t *myathdp = athdp();
-    fdxl_t *fdxl;
-    for (fdxl = myathdp->fdxl; fdxl != NULL; fdxl = fdxl->next) {
-        if (fd == fdxl->fd) {
-            fdxl->textbin = 0;
-            return;
-        }
-    }
-}
-
-/**
- * @brief set conversion mode to text
- */
-void
-set_tag_fd_text(int fd)
-{
-	ATHD_t *myathdp = athdp();
-    fdxl_t *fdxl;
-    for (fdxl = myathdp->fdxl; fdxl != NULL; fdxl = fdxl->next) {
-        if (fd == fdxl->fd) {
-            fdxl->textbin = 1;
-            return;
-        }
-    }
-}
-
-/**
- * @brief set conversion mode to text
- */
-void
-set_tag_fd_text_ro(int fd)
-{
-	ATHD_t *myathdp = athdp();
-    fdxl_t *fdxl;
-    for (fdxl = myathdp->fdxl; fdxl != NULL; fdxl = fdxl->next) {
-        if (fd == fdxl->fd) {
-            fdxl->textbin = 1;
-            return;
-        }
-    }
+    return strcpy(buf, getlogin());
 }
 
 /**
@@ -281,7 +209,7 @@ __openlog(const char *ident, int option, int facility)
  *
  */
 void 
-__syslog_o(int priority, const char *format, ...)
+__mysyslog(int priority, const char *format, ...)
 {
     return;
 }
@@ -298,16 +226,6 @@ __closelog()
 
 /**
  * @brief setlogmask stub
- *
- */
-int 
-__setlogmask_a(int mask)
-{
-    return 0;
-}
-
-/**
- * @brief setlogmask stub - no pragma
  *
  */
 int 
@@ -403,10 +321,9 @@ __shm_unlink(const char *name)
  *
  */
 char *
-__crypt_a(const char *phrase, const char *setting)
+__crypt(const char *phrase, const char *setting)
 {
     char *res = strdup("*****");
-    __toascii_a(res, res);
     return res;
 }
 
@@ -614,4 +531,33 @@ modfl(long double x, long double *iptr)
     }
     
     return fractional_part;
+}
+
+/**
+ * @brief Implement futimes() API
+ */
+int 
+__futimes(int fd, const struct timeval tv[2])
+{
+    FILE *stream;
+    fldata_t fileInfo;
+    char fileName[FILENAME_MAX];
+    int rc = -1, f;
+
+    memset(fileName, 0, sizeof(fileName));
+    if ((f = dup(fd)) != -1) {
+        stream = fdopen(f, "r");
+        if (stream != NULL) {
+            if (fldata(stream, fileName, &fileInfo) == 0) {
+                if (fileName[0] != 0) {
+                    rc = utimes(fileName, tv);
+                } else {
+                    errno = EBADF;
+                }
+            }
+            fclose(stream);
+        }
+        close(f);
+    }
+    return rc;
 }

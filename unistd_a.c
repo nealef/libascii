@@ -30,6 +30,7 @@
 #pragma export(__close_a)
 #pragma export(__confstr_a)
 #pragma export(__ctermid_a)
+#pragma export(__execl_a)
 #pragma export(__execv_a)
 #pragma export(__execve_a)
 #pragma export(__execvp_a)
@@ -48,6 +49,7 @@
 #pragma export(__truncate_a)
 #pragma export(__truncate_o)
 #pragma export(__ttyname_a)
+#pragma export(__ttyname_r_a)
 #pragma export(__unlink_a)
 #pragma export(__write_a)
  
@@ -57,6 +59,7 @@
 #pragma map(__close_a, "CLOSOVRA")
 #pragma map(__confstr_a, "\174\174A00238")
 #pragma map(__ctermid_a, "\174\174A00274")
+#pragma map(__execl_a, "\174\174A00039")
 #pragma map(__execv_a, "\174\174A00068")
 #pragma map(__execve_a, "\174\174A00084")
 #pragma map(__execvp_a, "\174\174A00085")
@@ -74,7 +77,8 @@
 #pragma map(__symlink_a, "\174\174A00205")
 #pragma map(__truncate_a, "\174\174A00206")
 #pragma map(__truncate_o, "TRUNCOVRA")
-#pragma map(__ttyname_a, "\174\174A00034")
+#pragma map(__ttyname_a, "\174\174A00294")
+#pragma map(__ttyname_r_a, "\174\174A00034")
 #pragma map(__unlink_a, "\174\174A00207")
 #pragma map(__write_a, "WRITOVRA")
 
@@ -192,6 +196,70 @@ __execvp_a(const char *file, char * const *argv)
     return rc;
 }
  
+/**
+ * @brief Execute a process given a list of arguments
+ */
+int
+__execl_a(const char *pn, const char *args, ...)
+{
+    va_list va;
+
+    /*
+     * --- Step 1: Count the arguments ---
+     */
+    int count = 1; // Start at 1 for the mandatory 'arg'
+    va_start(va, args);
+    const char *current_arg = va_arg(va, const char *);
+    while (current_arg != NULL) {
+        count++;
+        current_arg = va_arg(va, const char *);
+    }
+    va_end(va);
+
+    /*
+     * --- Step 2: Allocate the array ---
+     * We allocate (count + 1) to leave room for a trailing NULL element
+     */
+    char **argv_array = malloc((count + 1) * sizeof(char *));
+    if (argv_array == NULL) {
+        perror("Allocation failed");
+        return -1;
+    }
+
+    /*
+     * --- Step 3: Populate the array using strdup ---
+     * Restart va_list traversal from the beginning
+     */
+    va_start(va, args);
+    
+    // Handle the first mandatory argument (arg0)
+    argv_array[0] = (char *) strdup(args);
+    __toebcdic_a(argv_array[0], argv_array[0]);
+    
+    // Handle the remaining variadic arguments
+    for (int i = 1; i < count; i++) {
+        current_arg = va_arg(va, const char *);
+        argv_array[i] = strdup(current_arg);
+        __toebcdic_a(argv_array[i], argv_array[i]);
+    }
+    
+    // Explicitly NULL-terminate the array
+    argv_array[count] = NULL;
+    
+    va_end(va);
+
+    execl(__getEstring1_a(pn), (const char *)argv_array);
+
+    /*
+     * If we reach here then execl failed so free the array
+     */
+    for (int i = 0; i < count; i++)
+        free(argv_array[i]);
+    free(argv_array);
+
+    return -1;
+}
+
 /**
  * @brief Get current working directory
  */
@@ -329,7 +397,28 @@ char *
 __ttyname_a(int fd)
 {
     char *p = ttyname(fd);
-	return  __getAstring1_a(p);
+
+    if (p != NULL) 
+        return  __getAstring1_a(p);
+    return p;
+}
+
+/**
+ * @brief Get the Name of a Terminal - reentrant
+ */
+int
+__ttyname_r_a(int fd, char *res, size_t len)
+{
+    char *p = ttyname(fd);
+    size_t l;
+
+    if (p != NULL) {
+        l = (strlen(p) < len ? strlen(p) : len - 1);
+        __toasciilen_a(res, p, l);
+        res[l] = 0;
+        return 0;
+    }
+	return 1;
 }
 
 /**

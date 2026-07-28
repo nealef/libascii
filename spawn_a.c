@@ -27,6 +27,8 @@
 
 #pragma map(__spawn_a, "\174\174A00086")
 #pragma map(__spawnp_a, "\174\174A00088")
+#pragma map(__spawn2_a, "\174\174A00101")
+#pragma map(__spawnp2_a, "\174\174A00102")
 
 /*%PAGE																*/
 /**
@@ -99,3 +101,110 @@ __spawnp_a(const char *fn, const int nFd, const int fdMap[],
         
 	return (pid);
 }
+
+#if 0
+#pragma export(__spawn2_a)
+#pragma export(__spawnp2_a)
+#pragma map (__spawn2,"\174\174SPAWN2") 
+#pragma map (__spawnp2,"\174\174SPWNP2")
+
+/**
+ * @brief Spawn2 a process using pathname
+ */
+pid_t
+__spawn2_a(const char *pn, const int nFd, const int fdMap[],
+          const struct __inheritance *inherit, const char *args[],
+          const char *env[])
+{
+    const char **newArg = NULL,
+               **newEnv = NULL;
+    char *newPn;
+    pid_t pid;
+    struct __inheritance *in = NULL;
+
+    if (env != NULL)
+        newEnv = mkNew(env);
+
+    if (args != NULL)
+        newArg = mkNew(args);
+
+    if (inherit != NULL) { 
+        in = malloc(sizeof(*in));
+        memcpy(in, inherit, sizeof(*in));
+        if (in->cwdptr != NULL)
+            in->cwdptr = __getEstring2_a(inherit->cwdptr);
+        if (inherit->userid[0] != 0)
+            __toascii_a(in->userid, inherit->userid);
+        if (inherit->jobname[0] != 0)
+            __toascii_a(in->jobname, inherit->jobname);
+    }
+
+	newPn = strdup(__getEstring1_a(pn));
+
+    pid = __spawn2((const char *) newPn, nFd, fdMap, in,
+                   newArg, (const char **) newEnv);
+
+    if (in != NULL)
+        free(in);
+
+    if (newArg != NULL)
+        freeNew(newArg);
+
+    if (newEnv != NULL)
+        freeNew(newEnv);
+
+    free(newPn);
+        
+	return (pid);
+}
+
+/**
+ * @brief Spawnp2 a process using pathname
+ */
+pid_t
+__spawnp2_a(const char *fn, const int nFd, const int fdMap[],
+           const struct __inheritance *inherit, const char *args[],
+           const char *env[])
+{
+    const char **newArg = NULL,
+               **newEnv = NULL;
+    char *newFn;
+    pid_t pid;
+    struct __inheritance *in = NULL;
+
+    if (env != NULL)
+        newEnv = mkNew(env);
+
+    if (args != NULL)
+        newArg = mkNew(args);
+
+    if (inherit != NULL) { 
+        in = malloc(sizeof(*in));
+        memcpy(in, inherit, sizeof(*in));
+        if (in->cwdptr != NULL)
+            in->cwdptr = __getEstring2_a(inherit->cwdptr);
+        if (inherit->userid[0] != 0)
+            __toascii_a(in->userid, inherit->userid);
+        if (inherit->jobname[0] != 0)
+            __toascii_a(in->jobname, inherit->jobname);
+    }
+
+	newFn = strdup(__getEstring1_a(fn));
+
+    pid = __spawnp2((const char *) newFn, nFd, fdMap, in,
+                    newArg, (const char **) newEnv);
+
+    if (in != NULL)
+        free(in);
+
+    if (newArg != NULL)
+        freeNew(newArg);
+
+    if (newEnv != NULL)
+        freeNew(newEnv);
+
+    free(newFn);
+        
+	return (pid);
+}
+#endif

@@ -25,12 +25,14 @@
 #pragma export(__strerror_a)
 #pragma export(__strerror_r_a)
 #pragma export(__strncasecmp_a)
+#pragma export(__strxfrm_a)
 
 #pragma map(__strcasecmp_a, "\174\174A00292")
 #pragma map(__strcoll_a, "\174\174A00049")
 #pragma map(__strerror_a, "\174\174A00177")
 #pragma map(__strerror_r_a, "\174\174A00470")
 #pragma map(__strncasecmp_a, "\174\174A00293")
+#pragma map(__strxfrm_a, "\174\174A00053")
 
 /*%PAGE																*/
 /**
@@ -98,4 +100,29 @@ __strerror_r_a(int errnum, char *strerrbuf, size_t buflen)
     memset(strerrbuf, 0, len);
 	__toasciilen_a(strerrbuf, p, (int) len);
 	return 0;
+}
+
+/**
+ * @brief String Transform
+ */
+int
+__strxfrm_a(char *s1, const char *s2, size_t n)
+{
+	char   *p;
+    size_t len, 
+           s2len = strlen(s2);
+
+    if (s2len > MAXSTRING_a)
+        p = malloc(strlen(s2) + 1);
+    else
+        p = __getEstring2_a(s2);
+
+    len = strxfrm(s1, p, n);
+    if ((s1 != NULL) && (len > 0))
+        __toasciilen_a(s1, s1, len);
+
+    if (s2len > MAXSTRING_a)
+        free(p);
+
+	return len;
 }

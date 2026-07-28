@@ -17,8 +17,13 @@
 #include <sys/utsname.h>
 #include "global_a.h"
 #include "envtable.h"
+#include <leawi.h>
+#include <ceeedcct.h>
+
+_ENTRY hdlr = { .address = NULL };
 
 #pragma export(__initASCIIlib_a)
+#pragma export(__isVM)
 
 char version[20]="libascii V2.0.0";
 pthread_key_t *keyptr = (pthread_key_t *) NULL;
@@ -65,6 +70,27 @@ handler(int sig, siginfo_t *si, void *unused)
     _exit(1);
 }
 
+static void
+abendHandler(_FEEDBACK *fc, _INT4 *token, _INT4 *result, _FEEDBACK *newfc)
+{
+    _FEEDBACK ufc;
+
+    CEEHDLU(&hdlr, &ufc);
+
+    fprintf(stderr,"sev: %d msg: %d case: %d sever: %d ctrL: %d fac: %02x %02x %02x\n",
+            fc->tok_sev, fc->tok_msgno, fc->tok_case, fc->tok_sever, fc->tok_ctrl,
+            fc->tok_facid[0], fc->tok_facid[1], fc->tok_facid[2]);
+    fprintf(stderr,"token: %08x result: %08x\n", *token, *result);
+    /*
+     * If entry wasn't due to an exit() statement
+     */
+    if (fc->tok_msgno != 199) {
+        fprintf(stderr, "Abnormal Termination Handler Invoked\n");
+        cdump("abend");
+        _exit(2);
+     }
+}
+
 /*%PAGE																*/
 /**
  * @brief Main initialization for all ASCII library routines
@@ -77,6 +103,8 @@ __initASCIIlib_a()
 	int athdsz;
     struct sigaction sa;
     struct utsname ut;
+    _FEEDBACK fc;
+    _INT4 token;
 
 	/* Perform key create for process if necessary */
 	if (keyptr == (pthread_key_t *) NULL) {
@@ -126,10 +154,10 @@ __initASCIIlib_a()
     htInitTable(atp->envtbl);
 
     uname(&ut);
-    atp->isVM = strcmp(ut.sysname, "z/VM");
+    atp->isVM = (strcmp(ut.sysname, "z/VM") == 0);
 
-    sa.sa_flags = 0;
-    sigemptyset(&sa.sa_mask);
+    memset(&sa, 0, sizeof(sa));
+
     sa.sa_sigaction = handler;
     if (sigaction(SIGSEGV, &sa, NULL) == -1)
         perror("sigaction");
@@ -137,8 +165,25 @@ __initASCIIlib_a()
         perror("sigaction");
     if (sigaction(SIGILL, &sa, NULL) == -1)
         perror("sigaction");
+    if (sigaction(SIGABND, &sa, NULL) == -1)
+        perror("sigaction");
     if (sigaction(SIGABRT, &sa, NULL) == -1)
         perror("sigaction");
+
+    if (hdlr.address == NULL) {
+        token = 0;
+        hdlr.address = (_POINTER) &abendHandler;
+        hdlr.nesting = NULL;
+
+        CEEHDLR(&hdlr, &token, &fc);
+        
+        /* verify that CEEHDLR was successful */
+        if (_FBCHECK(fc , CEE000) != 0) {
+            fprintf(stderr, "CEEHDLR failed with message number %d\n", fc.tok_msgno);
+            exit (2999);
+        }
+    }
+
 	return(atp);
 }
 
@@ -168,6 +213,28 @@ __termASCIIlib_a(void *inparm)
     return;  /* for now just return */
 }
  
+/**
+ * @brief Return indicaction of whether we're running under z/VM
+ *
+ */
+int
+__isVM()
+{
+	int status;
+	ATHD_t *atp;
+
+	/*
+	 * Call pthread_getspecific() to get the address of the current thread's
+	 * ATHD structure.  If the current thread doesn't havee a ATHD structure
+	 * then call __initASCIIlib_a() to build one.
+	 */
+	if (((status = pthread_getspecific(key, (void **) &atp)) == -1)  ||
+		(atp == NULL) ){
+		atp = __initASCIIlib_a();
+	}
+    return atp->isVM;
+}
+
 /*%PAGE																*/
 /**
  * @brief Routine called when unusual condition encountered  for which there is no recovery.

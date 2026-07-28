@@ -23,21 +23,33 @@
 #pragma export(__getaddrinfo_a)
 #pragma export(__gethostbyaddr_a)
 #pragma export(__gethostbyname_a)
+#pragma export(__gethostent_a)
 #pragma export(__getnameinfo_a)
+#pragma export(__getnetbyaddr_a)
+#pragma export(__getnetbyname_a)
+#pragma export(__getnetent_a)
 #pragma export(__getprotobyname_a)
 #pragma export(__getprotobynumber_a)
+#pragma export(__getprotoent_a)
 #pragma export(__getservbyname_a)
 #pragma export(__getservbyport_a)
+#pragma export(__getservent_a)
 
-#pragma map(__gai_strerror_a, "\174\174A00208")
-#pragma map(__getaddrinfo_a, "\174\174A00082")
-#pragma map(__gethostbyaddr_a, "\174\174A00257")
-#pragma map(__gethostbyname_a, "\174\174A00258")
-#pragma map(__getnameinfo_a, "\174\174A00087")
-#pragma map(__getprotobyname_a, "\174\174A00318")
+#pragma map(__gai_strerror_a,     "\174\174A00208")
+#pragma map(__getaddrinfo_a,      "\174\174A00082")
+#pragma map(__gethostbyaddr_a,    "\174\174A00257")
+#pragma map(__gethostbyname_a,    "\174\174A00258")
+#pragma map(__gethostent_a,       "\174\174A00259")
+#pragma map(__getnameinfo_a,      "\174\174A00087")
+#pragma map(__getnetbyaddr_a,     "\174\174A00315")
+#pragma map(__getnetbyname_a,     "\174\174A00316")
+#pragma map(__getnetent_a,        "\174\174A00317")
+#pragma map(__getprotobyname_a,   "\174\174A00318")
 #pragma map(__getprotobynumber_a, "\174\174A00319")
-#pragma map(__getservbyname_a, "\174\174A00321")
-#pragma map(__getservbyport_a, "\174\174A00322")
+#pragma map(__getprotoent_a,      "\174\174A00320")
+#pragma map(__getservbyname_a,    "\174\174A00321")
+#pragma map(__getservbyport_a,    "\174\174A00322")
+#pragma map(__getservent_a,       "\174\174A00323")
 
 void convertHostentToAscii(struct hostent *);
 void convertServentToAscii(struct servent *);
@@ -178,6 +190,116 @@ __getnameinfo_a(const struct sockaddr *addr, socklen_t addrlen,
             __toasciilen_a(host, host, hostlen);
     }
     return rc;
+}
+
+/**
+ * @brief Get next host entry
+ */
+struct hostent *
+__gethostent_a()
+{
+	struct hostent *my_hostent;
+
+	my_hostent = gethostent();
+	if (my_hostent)
+		convertHostentToAscii(my_hostent);
+
+	return my_hostent;
+}
+
+/**
+ * @brief Get next server entry
+ */
+struct servent *
+__getservent_a()
+{
+    struct servent *my_servent;
+
+    my_servent = getservent();
+    if (my_servent)
+        convertServentToAscii(my_servent);
+
+    return my_servent;
+}
+
+/**
+ * @brief Get next net entry
+ */
+struct netent *
+__getnetent_a(void)
+{
+	struct netent *p;
+    char *c;
+
+	p = getnetent();
+	if (p != NULL) {
+        for (int i = 0; p->n_aliases[i] != NULL; i++)
+            __toascii_a(p->n_aliases[i], p->n_aliases[i]);
+
+        __toascii_a(p->n_name, p->n_name);
+		return(p);
+	} else
+		return(NULL);
+}
+
+/**
+ * @brief Get net entry by address
+ */
+struct netent *
+__getnetbyaddr_a(unsigned long net, int type)
+{
+	struct netent *p;
+    char *c;
+
+	p = getnetbyaddr(net, type);
+	if (p != NULL) {
+        for (int i = 0; p->n_aliases[i] != NULL; i++)
+            __toascii_a(p->n_aliases[i], p->n_aliases[i]);
+
+        __toascii_a(p->n_name, p->n_name);
+		return(p);
+	} else
+		return(NULL);
+}
+
+/**
+ * @brief Get net entry by name
+ */
+struct netent *
+__getnetbyname_a(char *name)
+{
+	struct netent *p;
+    char *c;
+
+	p = getnetbyname(__getEstring1_a(name));
+	if (p != NULL) {
+        for (int i = 0; p->n_aliases[i] != NULL; i++)
+            __toascii_a(p->n_aliases[i], p->n_aliases[i]);
+
+        __toascii_a(p->n_name, p->n_name);
+		return(p);
+	} else
+		return(NULL);
+}
+
+/**
+ * @brief Get next protocol entry
+ */
+struct protoent *
+__getprotoent_a(void)
+{
+	struct protoent *p;
+    char *c;
+
+	p = getprotoent();
+	if (p != NULL) {
+        for (int i = 0; p->p_aliases[i] != NULL; i++)
+            __toascii_a(p->p_aliases[i], p->p_aliases[i]);
+
+        __toascii_a(p->p_name, p->p_name);
+		return(p);
+	} else
+		return(NULL);
 }
 
 /*%PAGE																*/
