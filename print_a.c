@@ -60,11 +60,6 @@ typedef	_Bool BOOL;
 #define	FALSE	0
 #define	TRUE	!FALSE
 
-/**
- *	Proto-type statements   
- */
-static int CvrtToEbcdic(char *, size_t, char *, va_list);
-
 /*%PAGE																*/
 /**
  * @brief ASCII front-end to fprintf
@@ -80,7 +75,7 @@ __fprintf_a(FILE *stream, const char *format, ...)
 	int		result;			/* number of chars printed				*/
 
 	va_start(parg, format);	
-	result = CvrtToEbcdic(buffer,MAXSTRING_a,(char *)format,parg);
+	result = __formatAndConvert(buffer, FALSE, MAXSTRING_a, (char *)format, parg);
 	va_end(parg);
 	if (result > 0) { 
 		/* Translate to ASCII if not stdxxx							*/
@@ -106,7 +101,7 @@ __printf_a(const char *format, ...)
 	int		i;				/*										*/
 
 	va_start(parg, format);	
-	result = CvrtToEbcdic(buffer,MAXSTRING_a,(char *)format,parg);
+	result = __formatAndConvert(buffer, FALSE, MAXSTRING_a, (char *)format, parg);
 	va_end(parg);
 	if (result > 0)
 		result = fwrite(buffer,1,result,stdout);
@@ -126,7 +121,7 @@ __sprintf_a(char *buffer, const char *format, ...)
 	int		result;			/* number of chars printed				*/
 
 	va_start(parg, format);	
-	result = CvrtToEbcdic(buffer,MAXSTRING_a,(char *)format,parg);
+	result = __formatAndConvert(buffer, FALSE, MAXSTRING_a, (char *)format, parg);
 	va_end(parg);
 	if (result >= 0)
 		__toasciilen_a(buffer,buffer,result);
@@ -146,7 +141,7 @@ __snprintf_a(char *buffer, size_t maxlen, const char *format, ...)
 	int		result;			/* number of chars printed				*/
 
 	va_start(parg, format);	
-	result = CvrtToEbcdic(buffer,maxlen,(char *)format,parg);
+	result = __formatAndConvert(buffer, FALSE, maxlen, (char *)format, parg);
 	va_end(parg);
 	if (result >= 0)
 		__toasciilen_a(buffer,buffer,result);
@@ -165,7 +160,7 @@ __vfprintf_a(FILE *stream, const char *format, va_list parg)
 	char	buffer[MAXSTRING_a];	/* use MAXSTRING_a for size     */
 	int		result;			/* number of chars printed				*/
 
-	result = CvrtToEbcdic(buffer,MAXSTRING_a,(char *)format,parg);
+	result = __formatAndConvert(buffer, FALSE, MAXSTRING_a, (char *)format, parg);
 	if (result > 0) {
 		/* Translate to ASCII if not stdxxx							*/
 		if (stream != stderr && stream != stdout)
@@ -188,7 +183,7 @@ __vprintf_a(const char *format, va_list parg)
 	int		result;			/* number of chars printed				*/
 	int		i;			
 
-	result = CvrtToEbcdic(buffer,MAXSTRING_a,(char *)format,parg);
+	result = __formatAndConvert(buffer, FALSE, MAXSTRING_a, (char *)format, parg);
 	if (result > 0) 
 		result = fwrite(buffer,1,result,stdout);
 	return(result);
@@ -205,7 +200,7 @@ __vsprintf_a(char *buffer, const char *format, va_list parg)
 {
 	int		result;			/* number of chars printed				*/
 
-	result = CvrtToEbcdic(buffer,MAXSTRING_a,(char *)format,parg);
+	result = __formatAndConvert(buffer, FALSE, MAXSTRING_a, (char *)format, parg);
 	if (result > 0) 
 		__toasciilen_a(buffer,buffer,result);
 	return(result);
@@ -222,7 +217,7 @@ __vsnprintf_a(char *buffer, size_t maxlen, const char *format, va_list parg)
 {
 	int		result;			/* number of chars printed				*/
 
-	result = CvrtToEbcdic(buffer,maxlen,(char *)format,parg);
+	result = __formatAndConvert(buffer, FALSE, maxlen, (char *)format, parg);
 	if (result > 0) 
 		__toasciilen_a(buffer,buffer,result);
 	return(result);
@@ -235,6 +230,7 @@ __vsnprintf_a(char *buffer, size_t maxlen, const char *format, va_list parg)
  * ASCII to EBCDIC then performs the requested service.
  *
  * @param buffer output buffer containing EBCDIC buffer
+ * @param hasErrno whether %m option is supported
  * @param buffersize maximum size of buffer
  * @param eformat ASCII input buffer   
  * @param optional argument porinter
@@ -243,7 +239,7 @@ __vsnprintf_a(char *buffer, size_t maxlen, const char *format, va_list parg)
  *			a negative value in the case of an error.
  */
 int 
-CvrtToEbcdic(char *buffer, size_t buffersize, char *format, va_list parg)
+__formatAndConvert(char *buffer, int hasErrno, size_t buffersize, char *format, va_list parg)
  {
 	char 		*ip, *op, *argstrg, *eformatp;
 	char 		nchar[MAXSTRING_a];
@@ -261,6 +257,7 @@ CvrtToEbcdic(char *buffer, size_t buffersize, char *format, va_list parg)
 	int 		tmpint;
 	int 		argint;
 	int			ast = '*';
+    int         saved_errno = errno;
 	size_t 		period;
 	size_t		lenformat;
     long long   argllong;
@@ -492,6 +489,23 @@ CvrtToEbcdic(char *buffer, size_t buffersize, char *format, va_list parg)
 					continue;
 				}
 				break;
+
+            /* String equivalent of errno - only for syslog */
+            case 'm' :
+                if (hasErrno) {
+                    ccp = sprintf(op, "%s", strerror(saved_errno));
+				    if (ccp == -1) {
+					    sw_error = TRUE;
+					    continue;
+				    }
+				}
+                else {
+                    ip++;
+				    *op = *ip;
+				    ccp = 1;
+				    i = 0;
+                }
+                break;
 
 			/* Input variable is pointer to integer 				*/
 			/* Store number of characters printed so far in integer	*/	

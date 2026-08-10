@@ -43,6 +43,7 @@ void 		__towebcdic_a(wchar_t *, const wchar_t *);
 void 		__panic_a(char *);
 int         __isTerminal(FILE *);
 struct ATHD * getathdp();
+int         __formatAndConvert(char *, int, size_t, char *, va_list);
 
 #ifdef __cplusplus
 }

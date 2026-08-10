@@ -48,7 +48,7 @@ getathdp()
 	ATHD_t *atp;
 	/*
 	 * Call pthread_getspecific() to get the address of the current thread's
-	 * ATHD structure.  If the current thread doesn't havee a ATHD structure
+	 * ATHD structure.  If the current thread doesn't have a ATHD structure
 	 * then call __initASCIIlib_a() to build one.
 	 */
 	if (((status = pthread_getspecific(key, (void **) &atp)) == -1)  ||
@@ -118,7 +118,7 @@ __initASCIIlib_a()
     if (atp == NULL) 
         __panic_a("Error allocating thread pointer data area\n");
 	if ((pthread_setspecific(key, (void *) atp) == -1) &&
-	    ( errno == EINVAL) ) {
+	    (errno == EINVAL) ) {
 		/*
 		 * Pthread_setspecific failed because parm key is invalid.
 		 * At this point I am not sure if this code will ever be
