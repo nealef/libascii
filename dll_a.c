@@ -20,9 +20,11 @@
  
 #pragma export(__dllload_a)
 #pragma export(__dllqueryfn_a)
+#pragma export(__dllqueryvar_a)
  
 #pragma map(__dllload_a, "\174\174A00120")
 #pragma map(__dllqueryfn_a, "\174\174A00121")
+#pragma map(__dllqueryvar_a, "\174\174A00122")
 
 /*%PAGE																*/
 /********************************************************************/
@@ -40,6 +42,13 @@ __dllload_a(const char * dllname)
 void (*
 __dllqueryfn_a(dllhandle *dllHandle, char *funcName)) ()
 {
-	return dllqueryfn(dllHandle,  __getEstring1_a(funcName));
+    dlerror();
+	return (void (*)()) dlsym(dllHandle,  __getEstring1_a(funcName));
 }
-
+ 
+void *
+__dllqueryvar_a(dllhandle *dllHandle, char *symName)
+{
+    dlerror();
+	return (void *) dlsym(dllHandle,  __getEstring1_a(symName));
+}

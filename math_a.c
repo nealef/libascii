@@ -44,6 +44,9 @@
 #pragma export(__round_a)
 #pragma export(__roundf_a)
 #pragma export(__roundl_a)
+#pragma export(__trunc_a)
+#pragma export(__truncf_a)
+#pragma export(__truncl_a)
 #pragma export(__lround_a)
 #pragma export(__lroundf_a)
 #pragma export(__lroundl_a)
@@ -55,8 +58,13 @@
 #pragma export(__erfcf_a)
 #pragma export(__erfl_a)
 #pragma export(__erfcl_a)
+#pragma export(__lgamma_a)
 #pragma export(__lgammaf_a)
 #pragma export(__lgammal_a)
+#pragma export(__nexttoward_a)
+#pragma export(__exp2_a)
+#pragma export(__exp2f_a)
+#pragma export(__exp2l_a)
 #if 0
 #pragma export(__llround_a)
 #pragma export(__llroundf_a)
@@ -67,6 +75,9 @@
 #pragma map(__round_a, "\174\174ROUN\174B")
 #pragma map(__roundf_a, "\174\174ROUNFB")   
 #pragma map(__roundl_a, "\174\174ROUNLB")   
+#pragma map(__trunc_a, "\174\174TRNC\174B")
+#pragma map(__truncf_a, "\174\174FTRC\174B")   
+#pragma map(__truncl_a, "\174\174LTRC\174B")   
 #pragma map (__lround_a, "LROUND")
 #pragma map (__lroundf_a, "LROUNDF")
 #pragma map (__lroundl_a, "LROUNDL")
@@ -78,8 +89,13 @@
 #pragma map (__erfcf_a, "\174\174FEFC\174B")
 #pragma map (__erfl_a, "\174\174LERF\174B")
 #pragma map (__erfcl_a, "\174\174LEFC\174B")
+#pragma map (__lgamma_a, "\174\174LGMAB9")
 #pragma map (__lgammaf_a, "\174\174FLGA\174B")
 #pragma map (__lgammal_a, "\174\174LLGA\174B")
+#pragma map (__nexttoward_a, "\174\174NXTW\174B")
+#pragma map (__exp2_a, "\174\174EXP2\174B")
+#pragma map (__exp2f_a, "\174\174FXP2\174B")
+#pragma map (__exp2l_a, "\174\174LXP2\174B")
 
 static int roundingMode = 0;
 
@@ -299,7 +315,7 @@ __round_a(double g)
 }
 
 /**
- * @brief Round a double
+ * @brief Round a float
  */
 float
 __roundf_a(float f)
@@ -325,6 +341,55 @@ __roundl_a(double g)
     } r;
 
     asm ("  FIXBR   0,1,0\n"
+         "  STDY    0,%0\n"
+         "  STDY    2,%1\n"
+         : "=m" (r.d[0]), "=m" (r.d[1]) : : "cc");
+    
+    return r.res;
+}
+
+/**
+ * @brief Truncate a double
+ */
+double
+__trunc_a(double g)
+{
+    double res;
+
+    asm ("  FIDBR   0,3,0\n"
+         "  STDY    0,%0\n"
+         : "=m" (res) : : "cc");
+    
+    return res;
+}
+
+/**
+ * @brief Truncate a float
+ */
+float
+__truncf_a(float f)
+{
+    float res;
+
+    asm ("  FIEBR   0,3,0\n"
+         "  STEY    0,%0\n"
+         : "=m" (res) : : "cc");
+    
+    return res;
+}
+
+/**
+ * @brief Truncate a long double
+ */
+long double
+__truncl_a(double g)
+{
+    union {
+        long double res;
+        double d[2];
+    } r;
+
+    asm ("  FIXBR   0,3,0\n"
          "  STDY    0,%0\n"
          "  STDY    2,%1\n"
          : "=m" (r.d[0]), "=m" (r.d[1]) : : "cc");
@@ -436,6 +501,15 @@ __fabsl_a(float a)
 #undef lgamma
 
 /**
+ * @brief Return log gamma of double
+ */
+double
+__lgamma_a(double a)
+{
+    return (lgamma((double)a));
+}
+
+/**
  * @brief Return log gamma of float
  */
 float
@@ -526,4 +600,104 @@ __erfcl_a(long double a)
     static long double one = 1.0;
 
     return (one - erfl(a));
+}
+
+/**
+ * @brief Next toward
+ */
+double
+__nexttoward_a(double x, long double y)
+{
+    union double_bits {
+        double d;
+        uint64_t u;
+    } hx;
+
+    /*
+     * Handle NAN case
+     */
+    if (isnan(x) || isnan((double)y)) {
+        return x + (double)y; 
+    }
+
+    /*	
+	 * 2. Handle when x equals y
+     */
+    if (x == (double)y) {
+        return (double)y; // Returns y, preserving correct sign if x == 0
+    }
+
+    /*
+     * 3. Handle x == 0.0 (Special case: finding the smallest subnormal)
+     */
+    if (x == 0.0) {
+        hx.u = 1ULL; // Smallest positive subnormal bit pattern
+        return (y < 0.0L) ? -hx.d : hx.d;
+    }
+
+    /*
+     * Extract the sign bit (MSB)
+     */
+    uint64_t sign = hx.u & 0x8000000000000000ULL;
+
+    /*
+     * 4. Determine direction: do we move away from or toward zero?
+     *    If x and (y - x) have the same sign, we move away from zero (magnitude increases)
+     */
+    if ((x > 0.0 && y > (long double)x) || (x < 0.0 && y < (long double)x)) {
+        // Moving AWAY from zero: increment magnitude
+        if (sign) {
+            hx.u--; // Negative numbers get closer to -Infinity by decreasing integer value
+        } else {
+            hx.u++; // Positive numbers get closer to +Infinity by increasing integer value
+        }
+    } else {
+        // Moving TOWARD zero: decrement magnitude
+        if (sign) {
+            hx.u++; // Negative numbers get closer to zero by increasing integer value
+        } else {
+            hx.u--; // Positive numbers get closer to zero by decreasing integer value
+        }
+    }
+
+    /*
+     * 5. Handle overflow checking
+     *    If the exponent bits become all 1s (0x7FF...) and mantissa is 0, it became Infinity
+     */
+    if ((hx.u & 0x7FF0000000000000ULL) == 0x7FF0000000000000ULL) {
+        // Trigger overflow warning flag dynamically via standard math operations
+        volatile double overflow = 1e300;
+        overflow *= overflow; 
+    }
+
+    return hx.d;
+}
+
+/*
+ * High-precision constant representation of ln(2)
+ */
+#define LN2 0.693147180559945309417232121458176568L
+
+/*
+ * @brief Return exp2()
+ */
+double 
+__exp2_a(double x) {
+    return exp(x * (double)LN2);
+}
+
+/*
+ * @brief Return exp2f()
+ */
+float 
+__exp2f_a(float x) {
+    return expf(x * (float)LN2);
+}
+
+/*
+ * @brief Return exp2l()
+ */
+long double
+__exp2l_a(long double x) {
+    return expl(x * (long double)LN2);
 }

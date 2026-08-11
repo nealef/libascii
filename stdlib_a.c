@@ -19,6 +19,7 @@
 #include <string.h>
 #include <strings.h>
 #include <unistd.h>
+#include <errno.h>
 #include <time.h>
 #include <sys/utsname.h>
 #include <grp.h>
@@ -40,6 +41,7 @@
 #pragma export(__getenv_a)
 #pragma export(__getenv_ea)
 #pragma export(__l64a_a)
+#pragma export(__mblen_a)
 #pragma export(__mbstowcs_a)
 #pragma export(__mbtowc_a)
 #pragma export(__mkstemp_a)
@@ -68,6 +70,7 @@
 #pragma map(__getenv_a, "\174\174A00181")
 #pragma map(__getenv_ea, "\174\174A00423")
 #pragma map(__l64a_a, "\174\174A00176")
+#pragma map(__mblen_a, "\174\174A00002")
 #pragma map(__mbstowcs_a, "\174\174A00006")
 #pragma map(__mbtowc_a, "\174\174A00008")
 #pragma map(__mkstemp_a, "\174\174A00184")
@@ -190,46 +193,238 @@ __getenv_ea(const char *varname)
 }
 
 /**
- * @brief Convert multibyte character to wide character
+ * @brief Translates an ISO-8859-1 multibyte string to a wide character array.
+ *
+ * @param sourceString          Source extended ASCII byte string.
+ * @param destinationWideBuffer Output wide character buffer.
+ * @param maxWcharsToWrite      Maximum number of wchar_t elements to write.
+ * @return                      Number of wide characters written, or -1 on overflow.
+ */
+static size_t
+convertAsciiToWideString(const char *sourceString, wchar_t *destinationWideBuffer, size_t maxWcharsToWrite)
+{
+    if (sourceString == NULL) {
+        return 0;
+    }
+
+    // Query mode: calculate required wide character length
+    if (destinationWideBuffer == NULL) {
+        size_t stringLength = 0;
+        const unsigned char *sourcePtr = (const unsigned char *)sourceString;
+        while (*sourcePtr++ != '\0') {
+            stringLength++;
+        }
+        return stringLength;
+    }
+
+    const unsigned char *sourcePtr = (const unsigned char *)sourceString;
+    size_t wcharsWritten = 0;
+
+    while (*sourcePtr != '\0' && wcharsWritten < maxWcharsToWrite) {
+        // Zero-extend the unsigned byte value directly to wchar_t
+        destinationWideBuffer[wcharsWritten] = (wchar_t)(*sourcePtr);
+        sourcePtr++;
+        wcharsWritten++;
+    }
+
+    if (wcharsWritten < maxWcharsToWrite) {
+        destinationWideBuffer[wcharsWritten] = L'\0';
+    }
+
+    return wcharsWritten;
+}
+
+/**
+ * @brief Translates a wide character array to an ISO-8859-1 byte string.
+ *
+ * @param destinationBuffer Output byte buffer.
+ * @param sourceWideString  Source wide character string.
+ * @param maxBytesToWrite   Capacity of destinationBuffer.
+ * @return                  Number of bytes written, or (size_t)-1 on error.
+ */
+static size_t
+convertWideToAsciiString(char *destinationBuffer, const wchar_t *sourceWideString, size_t maxBytesToWrite)
+{
+    if (sourceWideString == NULL) {
+        errno = EINVAL;
+        return (size_t)-1;
+    }
+
+    // Query mode: calculate required byte buffer length
+    if (destinationBuffer == NULL) {
+        size_t totalBytesNeeded = 0;
+        const wchar_t *widePtr = sourceWideString;
+        while (*widePtr != L'\0') {
+            if (*widePtr > 0x00FF) {
+                errno = EILSEQ; // Character cannot fit in ISO-8859-1
+                return (size_t)-1;
+            }
+            totalBytesNeeded++;
+            widePtr++;
+        }
+        return totalBytesNeeded;
+    }
+
+    const wchar_t *widePtr = sourceWideString;
+    size_t bytesWritten = 0;
+
+    while (*widePtr != L'\0' && bytesWritten < maxBytesToWrite) {
+        if (*widePtr > 0x00FF) {
+            errno = EILSEQ; // Value exceeds extended ASCII range
+            return (size_t)-1;
+        }
+
+        destinationBuffer[bytesWritten] = (char)(*widePtr & 0xFF);
+        widePtr++;
+        bytesWritten++;
+    }
+
+    if (bytesWritten < maxBytesToWrite) {
+        destinationBuffer[bytesWritten] = '\0';
+    }
+
+    return bytesWritten;
+}
+
+/**
+ * @brief Convert multibyte character to wide character using iconv()
+ *
+ * @param pwc  Pointer to the destination wide character
+ * @param s    Pointer to the multibyte character string input
+ * @param n    Maximum number of bytes to inspect from 's'
+ * @return     Number of bytes consumed, 0 for null character, or -1 on error
  */
 int 
-__mbtowc_a(wchar_t *pwc, const char *string, size_t n)
+__mbtowc_a(wchar_t *pwc, const char *s, size_t n)
 {
-	return(mbtowc(pwc, string, n));
-}                                                       
+    if (s == NULL) {
+        return 0; 
+    }
+
+    if (n == 0) {
+        errno = EILSEQ;
+        return -1;
+    }
+
+    if (*s == '\0') {
+        if (pwc) {
+            *pwc = L'\0';
+        }
+        return 0;
+    }
+
+    if (pwc) {
+        // Use our subroutine to convert a single character window
+        char singleCharString[2] = { *s, '\0' };
+
+        convertAsciiToWideString(singleCharString, pwc, 1);
+    }
+
+    return 1; // 1 byte consumed
+}
+
 
 /**
  * @brief Convert multibyte characters to wide characters
+*
+ * @param pwcs Pointer to the destination wide-character array (or NULL)
+ * @param s    Pointer to the source multibyte string
+ * @param n    Maximum number of wchar_t elements to write to pwcs
+ * @return     Number of wide characters written (excluding L'\0'), or (size_t)-1 on error
  */
-size_t
-__mbstowcs_a(wchar_t *pwc, const char *string, size_t n)       
-{                                                                
-    return(mbstowcs(pwc, string, n));
+size_t 
+__mbstowcs_a(wchar_t *pwcs, const char *s, size_t n)
+{
+    if (s == NULL) {
+        errno = EINVAL;
+        return (size_t)-1;
+    }
+
+    // Delegate behavior entirely to our subroutine mapping logic
+    return convertAsciiToWideString(s, pwcs, n);
 }
 
 /**
  * @brief Convert wide character to multibyte character
+ *
+ * @param pmb   Pointer to the Output Byte Buffer
+ * @param c     The Wide Character to Convert
+ * @return      Number of Bytes Written, 0- ForNull, or -1 On Error
  */
-int 
+int
 __wctomb_a(char *pmb, wchar_t c)
 {
-    int len;
+    if (pmb == NULL) {
+        return 0; // Stateless encoding
+    }
 
-	len = wctomb(pmb, c);
-    return(len);
-}                                                       
+    if (c == L'\0') {
+        *pmb = '\0';
+        return 0;
+    }
+
+    wchar_t singleWideString[2] = { c, L'\0' };
+    char resultByte = '\0';
+
+    // Attempt the conversion using our sub-macro utility
+    size_t result = convertWideToAsciiString(&resultByte, singleWideString, 1);
+    
+    if (result == (size_t)-1) {
+        // errno is already set to EILSEQ inside convertWideToAsciiString if wideChar > 0xFF
+        return -1;
+    }
+
+    *pmb = resultByte;
+    return 1; // 1 byte generated
+}
 
 /**
  * @brief Convert wide characters to multibyte characters
+ *
+ * @param pmb    Destination Buffer (or NULL For Length Query)
+ * @param string Source Wide Character String
+ * @param n      Maximum Number of Bytes to Write to Destnation Buffer
+ * @return       Number of bytes written (excluding NULL), or (size_t)-1 On Error
  */
 size_t
 __wcstombs_a(char *pmb, wchar_t *string, size_t n)       
-{                                                                
-    size_t len;
-	len = wcstombs(pmb, string, n);
-    return(len);
+{
+    if (string == NULL) {
+        errno = EINVAL;
+        return (size_t)-1;
+    }
+
+    // Delegate directly to the custom character boundary mapping subroutine
+    return convertWideToAsciiString(pmb, string, n);
 }
 
+/**
+ * @brief Determines the number of bytes in a multibyte character using iconv.
+ *
+ * @param inputString  Pointer to the multibyte character sequence
+ * @param maxBytesRead Maximum number of bytes to inspect from inputString
+ * @return             Number of bytes consumed, 0 for null character, or -1 on error
+ */
+int 
+__mblen_a(const char *inputString, size_t maxBytesRead)
+{
+    if (inputString == NULL) {
+        return 0; // Latin-1/Extended ASCII is stateless
+    }
+
+    if (maxBytesRead == 0) {
+        errno = EILSEQ;
+        return -1;
+    }
+
+    if (*inputString == '\0') {
+        return 0;
+    }
+    
+    // Every valid character in extended ASCII is exactly 1 byte long
+    return 1;
+}
+        
 /**
  * @brief Make a unique file name
  */
