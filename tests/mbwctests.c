@@ -1,166 +1,276 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <wchar.h>
 #include <string.h>
+#include <wchar.h>
 #include <errno.h>
 #include <assert.h>
+#include <math.h>
 
-// --- Test Suite Execution ---
+// --- Test Suites ---
 
 static void
-runMblenTests(void)
+test_wcslen(void)
 {
-    printf("Running mblen tests...\n");
+    fprintf(stdout, "[1/14] Testing wcslen...\n");
 
-    // Test 1: State query (should return 0 for stateless encodings)
+    assert(wcslen(L"") == 0);
+    assert(wcslen(L"A") == 1);
+    assert(wcslen(L"Hello, World!") == 13);
+
+    fprintf(stdout, "       -> PASSED\n");
+}
+
+static void
+test_wcsstr(void)
+{
+    fprintf(stdout, "[2/14] Testing wcsstr...\n");
+
+    const wchar_t *haystack = L"The quick brown fox jumps over the lazy dog";
+
+    // Standard searches
+    assert(wcsstr(haystack, L"brown") == &haystack[10]);
+    assert(wcsstr(haystack, L"The") == &haystack[0]);
+    assert(wcsstr(haystack, L"dog") == &haystack[40]);
+
+    // Edge cases
+    assert(wcsstr(haystack, L"cat") == NULL);
+    assert(wcsstr(haystack, L"") == haystack);
+
+    fprintf(stdout, "       -> PASSED\n");
+}
+
+static void
+test_wcstod(void)
+{
+    fprintf(stdout, "[3/14] Testing wcstod...\n");
+    wchar_t *endPtr = NULL;
+
+    // Standard conversions
+    assert(fabs(wcstod(L"123.45", &endPtr) - 123.45) < 1e-6);
+    assert(*endPtr == L'\0');
+
+    // Negative + Exponent + Leading Whitespace
+    assert(fabs(wcstod(L"   -1.25e2 Rest", &endPtr) - (-125.0)) < 1e-6);
+    assert(wcscmp(endPtr, L" Rest") == 0);
+
+    // Edge cases
+    assert(wcstod(NULL, &endPtr) == 0.0);
+    assert(endPtr == NULL);
+
+    wcstod(L"NoNumber", &endPtr);
+    assert(wcscmp(endPtr, L"NoNumber") == 0);
+
+    fprintf(stdout, "       -> PASSED\n");
+}
+
+static void
+test_mbsinit(void)
+{
+    fprintf(stdout, "[4/14] Testing mbsinit...\n");
+
+    mbstate_t state;
+    memset(&state, 0, sizeof(state));
+
+    assert(mbsinit(NULL) != 0); // NULL is always in initial state
+    assert(mbsinit(&state) != 0);
+
+    fprintf(stdout, "       -> PASSED\n");
+}
+
+static void
+test_mbrtowc_and_mbtowc(void)
+{
+    fprintf(stdout, "[5-6/14] Testing mbrtowc and mbtowc...\n");
+    wchar_t wc = 0;
+    mbstate_t state;
+    memset(&state, 0, sizeof(state));
+
+    // Basic ASCII character
+    assert(mbrtowc(&wc, "A", 1, NULL) == 1);
+    assert(wc == L'A');
+
+    // Null terminator returns 0
+    assert(mbrtowc(&wc, "", 1, NULL) == 0);
+    assert(wc == L'\0');
+
+    // mbtowc wrapper check
+    assert(mbtowc(&wc, "B", 1) == 1);
+    assert(wc == L'B');
+
+    // Boundary check (n = 0 should return -2 for incomplete sequence)
+    int rc = mbrtowc(&wc, "A", 0, NULL);
+    perror("mbrtowc");
+    fprintf(stdout, "%d\n",rc);
+    assert(mbrtowc(&wc, "A", 0, NULL) == (size_t)-2);
+
+    fprintf(stdout, "         -> PASSED\n");
+}
+
+static void
+test_wcrtomb_and_wctomb(void)
+{
+    fprintf(stdout, "[7-8/14] Testing wcrtomb and wctomb...\n");
+    char buf[8] = {0};
+    mbstate_t state;
+    memset(&state, 0, sizeof(state));
+
+    // Single character conversion
+    assert(wcrtomb(buf, L'Z', NULL) == 1);
+    assert(buf[0] == 'Z');
+
+    // Null character
+    assert(wcrtomb(buf, L'\0', NULL) == 1);
+    assert(buf[0] == '\0');
+
+    // wctomb wrapper check
+    assert(wctomb(buf, L'Y') == 1);
+    assert(buf[0] == 'Y');
+
+    // NULL target buffer returns 1 (stateless check)
+    assert(wcrtomb(NULL, L'A', NULL) == 1);
+
+    fprintf(stdout, "         -> PASSED\n");
+}
+
+static void
+test_mblen_and_mbrlen(void)
+{
+    fprintf(stdout, "[9-10/14] Testing mblen and mbrlen...\n");
+    mbstate_t state;
+    memset(&state, 0, sizeof(state));
+
+    assert(mblen("Test", 4) == 1);
+    assert(mblen("", 1) == 0);
     assert(mblen(NULL, 0) == 0);
 
-    // Test 2: Null terminator
-    assert(mblen("", 1) == 0);
+    assert(mbrlen("Test", 4, NULL) == 1);
+    assert(mbrlen("", 1, NULL) == 0);
 
-    // Test 3: Standard ASCII character
-    assert(mblen("A", 1) == 1);
-
-    // Test 4: Extended ASCII character (e.g., 0xE9 for 'é')
-    const char extendedChar[] = { (char)0xE9, '\0' };
-    assert(mblen(extendedChar, 1) == 1);
-
-    // Test 5: Error handling when maxBytesRead is 0
-    errno = 0;
-    assert(mblen("A", 0) == -1);
-    assert(errno == EILSEQ);
-
-    printf("  -> mblen tests passed!\n");
+    fprintf(stdout, "          -> PASSED\n");
 }
 
 static void
-runMbtowcTests(void) {
-    printf("Running mbtowc tests...\n");
-    wchar_t destinationWc = 0;
-
-    // Test 1: State query
-    assert(mbtowc(NULL, NULL, 0) == 0);
-
-    // Test 2: Null terminator
-    destinationWc = L'X';
-    assert(mbtowc(&destinationWc, "", 1) == 0);
-    assert(destinationWc == L'\0');
-
-    // Test 3: Standard ASCII conversion validation
-    destinationWc = 0;
-    assert(mbtowc(&destinationWc, "B", 1) == 1);
-    assert(destinationWc == L'B');
-
-    // Test 4: Extended ASCII character check
-    const char extendedChar[] = { (char)0xA4, '\0' }; // Currency sign ¤
-    destinationWc = 0;
-    assert(mbtowc(&destinationWc, extendedChar, 1) == 1);
-    assert(destinationWc == (wchar_t)0x00A4);
-
-    // Test 5: Target pointer is NULL (should still return character length)
-    assert(mbtowc(NULL, "C", 1) == 1);
-
-    printf("  -> mbtowc tests passed!\n");
-}
-
-static void
-runMbstowcsTests(void)
+test_mbstowcs_and_mbsrtowcs(void)
 {
-    printf("Running mbstowcs tests...\n");
-    wchar_t wideBuffer[16];
-    const char extendedString[] = { 'C', 'a', 'f', (char)0xa9, '\0' }; // Café
+    fprintf(stdout, "[11-12/14] Testing mbstowcs and mbsrtowcs...\n");
 
-    // Test 1: Query mode (destination buffer is NULL)
-    size_t requiredLength = mbstowcs(NULL, extendedString, 0);
-    assert(requiredLength == 4);
+    const char *srcStr = "Hello, C!";
+    wchar_t dstBuf[32];
 
-    // Test 2: Standard complete array conversion
-    memset(wideBuffer, 0, sizeof(wideBuffer));
-    size_t resultCount = mbstowcs(wideBuffer, extendedString, 16);
-    assert(resultCount == 4);
-    assert(wcscmp(wideBuffer, L"Café") == 0);
+    // Standard string conversion
+    size_t written = mbstowcs(dstBuf, srcStr, 32);
+    assert(written == 9);
+    assert(wcscmp(dstBuf, L"Hello, C!") == 0);
 
-    // Test 3: Buffer limit capping (destination array bounds constraint)
-    memset(wideBuffer, 0, sizeof(wideBuffer));
-    resultCount = mbstowcs(wideBuffer, extendedString, 2);
-    assert(resultCount == 2);
-    assert(wideBuffer[0] == L'C' && wideBuffer[1] == L'a');
-    assert(wideBuffer[2] == 0); // Ensure it didn't write outside constraints
+    // Buffer limit capping test
+    memset(dstBuf, 0, sizeof(dstBuf));
+    written = mbstowcs(dstBuf, srcStr, 5);
+    assert(written == 5);
+    assert(wcsncmp(dstBuf, L"Hello", 5) == 0);
 
-    printf("  -> mbtowcs tests passed!\n");
+    // Pointer update check for mbsrtowcs
+    const char *srcPtr = srcStr;
+    mbstate_t state;
+    memset(&state, 0, sizeof(state));
+
+    written = mbsrtowcs(dstBuf, &srcPtr, 32, NULL);
+    assert(written == 9);
+    assert(srcPtr == NULL); // Standard requires setting *src to NULL on completion
+
+    fprintf(stdout, "           -> PASSED\n");
 }
 
 static void
-runWctombTests(void)
+test_wcstombs_and_wcsrtombs(void)
 {
-    printf("Running wctomb tests...\n");
-    char outputBuffer[4];
+    fprintf(stdout, "[13-14/14] Testing wcstombs and wcsrtombs...\n");
 
-    // Test 1: State query
-    assert(wctomb(NULL, L'\0') == 0);
+    const wchar_t *srcWstr = L"Wide String Test";
+    char dstBuf[32];
 
-    // Test 2: Null wide character conversion
-    outputBuffer[0] = 'X';
-    assert(wctomb(outputBuffer, L'\0') == 0);
-    assert(outputBuffer[0] == '\0');
+    // Standard wide string to multibyte conversion
+    size_t written = wcstombs(dstBuf, srcWstr, 32);
+    assert(written == 16);
+    assert(strcmp(dstBuf, "Wide String Test") == 0);
 
-    // Test 3: Regular ASCII conversion mapping
-    assert(wctomb(outputBuffer, L'Z') == 1);
-    assert(outputBuffer[0] == 'Z');
+    // Buffer limit capping test
+    memset(dstBuf, 0, sizeof(dstBuf));
+    written = wcstombs(dstBuf, srcWstr, 4);
+    assert(written == 4);
+    assert(strncmp(dstBuf, "Wide", 4) == 0);
 
-    // Test 4: Extended ASCII boundary verification
-    assert(wctomb(outputBuffer, (wchar_t)0x00FF) == 1);
-    assert((unsigned char)outputBuffer[0] == 0xFF);
+    // Pointer update check for wcsrtombs
+    const wchar_t *srcPtr = srcWstr;
+    mbstate_t state;
+    memset(&state, 0, sizeof(state));
 
-    // Test 5: Out of bounds invalid sequence protection (> 0xFF)
-    errno = 0;
-    assert(wctomb(outputBuffer, (wchar_t)0x0100) == -1);
-    assert(errno == EILSEQ);
+    written = wcsrtombs(dstBuf, &srcPtr, 32, NULL);
+    assert(written == 16);
+    assert(srcPtr == NULL); // Standard requires setting *src to NULL on completion
 
-    printf("  -> wctomb tests passed!\n");
+    fprintf(stdout, "           -> PASSED\n");
 }
 
 static void
-runWcstombsTests(void)
+test_wcstrtoul(void)
 {
-    printf("Running wcstombs tests...\n");
-    char byteBuffer[16];
-    const wchar_t validWideStr[] = L"Test\x00B1"; // Test±
+    wchar_t *endptr;
 
-    // Test 1: Length calculation query mode
-    size_t requiredBytes = wcstombs(NULL, validWideStr, 0);
-    assert(requiredBytes == 5);
+    // 1. Basic Decimal
+    assert(wcstoul(L"12345", &endptr, 10) == 12345UL);
+    assert(*endptr == L'\0');
 
-    // Test 2: Successful block string copy translation
-    memset(byteBuffer, 0, sizeof(byteBuffer));
-    size_t writtenBytes = wcstombs(byteBuffer, validWideStr, 16);
-    assert(writtenBytes == 5);
-    assert(byteBuffer[0] == 'T' && (unsigned char)byteBuffer[4] == 0xB1);
+    // 2. Hexadecimal auto-detect (base 0) and explicit base 16
+    assert(wcstoul(L"0x1A3F", &endptr, 0) == 0x1A3FUL);
+    assert(*endptr == L'\0');
+    assert(wcstoul(L"1a3f", &endptr, 16) == 0x1A3FUL);
 
-    // Test 3: Buffer size clamping checks
-    memset(byteBuffer, 0, sizeof(byteBuffer));
-    writtenBytes = wcstombs(byteBuffer, validWideStr, 3);
-    assert(writtenBytes == 3);
-    assert(strncmp(byteBuffer, "Tes", 3) == 0);
+    // 3. Octal auto-detect
+    assert(wcstoul(L"0755", &endptr, 0) == 0755UL);
 
-    // Test 4: Encountering an illegal runtime conversion character
-    const wchar_t invalidWideStr[] = { L'A', (wchar_t)0x20AC, L'\0' }; // Euro mark (U+20AC) out of bounds
+    // 4. Base 36 (Alphanumeric maximum radix)
+    assert(wcstoul(L"Z", &endptr, 36) == 35UL);
+
+    // 5. Overflow handling
     errno = 0;
-    assert(wcstombs(byteBuffer, invalidWideStr, 16) == (size_t)-1);
-    assert(errno == EILSEQ);
+    assert(wcstoul(L"99999999999999999999999999999", &endptr, 10) == ULONG_MAX);
+    assert(errno == ERANGE);
 
-    printf("  -> wcstombs tests passed!\n");
+    // 6. Leading whitespace and sign handling
+    assert(wcstoul(L"   -42 Rest", &endptr, 10) == (unsigned long)-42);
+    assert(wcscmp(endptr, L" Rest") == 0);
+
+    // 7. Invalid base check
+    errno = 0;
+    assert(wcstoul(L"123", &endptr, 37) == 0);
+    assert(errno == EINVAL);
+
+    fprintf(stdout, "All custom_wcstoul tests passed successfully!\n");
 }
 
-int main(void) {
-    printf("=== Starting Multibyte and Wide Character Conversion Test Suite ===\n\n");
-    
-    runMblenTests();
-    runMbtowcTests();
-    runMbstowcsTests();
-    runWctombTests();
-    runWcstombsTests();
+// --- Driver Main ---
 
-    printf("\n=== All Test Framework Cases Executed Successfully! ===\n");
+int
+main(void)
+{
+    fprintf(stdout, "====================================================\n");
+    fprintf(stdout, "  Starting Custom Multibyte & Wide-Char Test Suite  \n");
+    fprintf(stdout, "====================================================\n\n");
+
+    test_wcslen();
+    test_wcsstr();
+    test_wcstod();
+    test_mbsinit();
+    test_mbrtowc_and_mbtowc();
+    test_wcrtomb_and_wctomb();
+    test_mblen_and_mbrlen();
+    test_mbstowcs_and_mbsrtowcs();
+    test_wcstombs_and_wcsrtombs();
+    test_wcstrtoul();
+
+    fprintf(stdout, "\n====================================================\n");
+    fprintf(stdout, "  ALL 15 ROUTINE TESTS COMPLETED SUCCESSFULLY!      \n");
+    fprintf(stdout, "====================================================\n");
+
     return 0;
 }

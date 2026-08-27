@@ -29,7 +29,7 @@
 /*%PAGE																*/
 /********************************************************************/
 /*																	*/
-/* ASCII front-end routines for DLL functions						*/
+/* ASCII front-end routines for DLL functions - replace with dlfcn	*/
 /*																	*/
 /********************************************************************/
  
@@ -43,12 +43,12 @@ void (*
 __dllqueryfn_a(dllhandle *dllHandle, char *funcName)) ()
 {
     dlerror();
-	return (void (*)()) dlsym(dllHandle,  __getEstring1_a(funcName));
+	return dllqueryfn(dllHandle,  __getEstring1_a(funcName));
 }
  
 void *
 __dllqueryvar_a(dllhandle *dllHandle, char *symName)
 {
     dlerror();
-	return (void *) dlsym(dllHandle,  __getEstring1_a(symName));
+	return dllqueryvar(dllHandle,  __getEstring1_a(symName));
 }

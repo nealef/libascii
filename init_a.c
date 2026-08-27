@@ -138,6 +138,9 @@ __initASCIIlib_a()
 	/* Initialize ASCII translation routines. */
 	init_trans_a();	
 
+    /* Initialize the mbstate area for mb<->wc conversions */
+    memset(&atp->mb, 0, sizeof(atp->mb));
+
 	/* Initialize ebcdic path name used my many routines. */
 	atp->epathname = malloc((size_t) _POSIX_PATH_MAX);
 
@@ -207,6 +210,8 @@ __termASCIIlib_a(void *inparm)
 			term_locale(atp); /* call locale thread termination       */
 			htFreeTable(atp->envtbl);
 			free(atp->epathname);
+            if (atp->locale)
+                free(atp->locale);
 		}
 		free(atp);     /* free athd data area for current thread */
 	}

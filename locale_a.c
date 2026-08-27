@@ -51,7 +51,12 @@ struct elconv {
     char elconv_credit_sign[8];
 
     } ;
- typedef struct elconv elconv_t ;
+typedef struct elconv elconv_t ;
+
+/** 
+ * Locale cache
+ */
+char *locCache[LC_SYNTAX + 2];
 
 /*%PAGE																*/
 /**
@@ -61,45 +66,45 @@ struct lconv *
 __localeconv_a(void)
 {
 	struct	lconv* 	syslconv;
-	ATHD_t	*		myathdp;
+	ATHD_t	*		atp;
 	elconv_t *      myelconv;
 	int				elconv_sz;
-	myathdp = athdp();			/* get ptr to athd 					*/
+	atp = athdp();			/* get ptr to athd 					*/
 
 	/* If 1st localeconv call for this thread						*/
 	/* -- Get space for local copy of lconv area					*/
 	/* -- Set ptrs in elconv_str to fields in elconv           		*/
-	if (myathdp->elconv_a == 0) {
+	if (atp->elconv_a == 0) {
 		elconv_sz = sizeof(elconv_t);
 		myelconv = (elconv_t *) calloc(1,elconv_sz);
-		myathdp->elconv_a =&(myelconv->elconv_str);
-		myathdp->elconv_a->decimal_point = 
+		atp->elconv_a =&(myelconv->elconv_str);
+		atp->elconv_a->decimal_point = 
 				(char *)&(myelconv->elconv_decimal_point);
-		myathdp->elconv_a->thousands_sep =
+		atp->elconv_a->thousands_sep =
 				(char *)&(myelconv->elconv_thousands_sep);
-		myathdp->elconv_a->grouping =
+		atp->elconv_a->grouping =
 				(char *)&(myelconv->elconv_grouping);
-		myathdp->elconv_a->int_curr_symbol =
+		atp->elconv_a->int_curr_symbol =
 				(char *)&(myelconv->elconv_int_curr_symbol);
-		myathdp->elconv_a->currency_symbol =
+		atp->elconv_a->currency_symbol =
 				(char *)&(myelconv->elconv_currency_symbol);
-		myathdp->elconv_a->mon_decimal_point	=
+		atp->elconv_a->mon_decimal_point	=
 				(char *)&(myelconv->elconv_mon_decimal_point);
-		myathdp->elconv_a->mon_thousands_sep	=
+		atp->elconv_a->mon_thousands_sep	=
 				(char *)&(myelconv->elconv_mon_thousands_sep);
-		myathdp->elconv_a->mon_grouping =
+		atp->elconv_a->mon_grouping =
 				(char *)&(myelconv->elconv_mon_grouping); 
-		myathdp->elconv_a->positive_sign =
+		atp->elconv_a->positive_sign =
 				(char *)&(myelconv->elconv_positive_sign);
-		myathdp->elconv_a->negative_sign =
+		atp->elconv_a->negative_sign =
 				(char *)&(myelconv->elconv_negative_sign);
-		myathdp->elconv_a->left_parenthesis =
+		atp->elconv_a->left_parenthesis =
 				(char *)&(myelconv->elconv_left_parenthesis);
-		myathdp->elconv_a->right_parenthesis =
+		atp->elconv_a->right_parenthesis =
 				(char *)&(myelconv->elconv_right_parenthesis);
-		myathdp->elconv_a->debit_sign =
+		atp->elconv_a->debit_sign =
 				(char *)&(myelconv->elconv_debit_sign);
-		myathdp->elconv_a->credit_sign =
+		atp->elconv_a->credit_sign =
 				(char *)&(myelconv->elconv_credit_sign);
 	}
 
@@ -108,47 +113,47 @@ __localeconv_a(void)
 	/* translation from ebcidic to ascii can be done.				*/
 	syslconv = localeconv();
 
-	myathdp->elconv_a->int_frac_digits = syslconv->int_frac_digits;
-	myathdp->elconv_a->frac_digits = syslconv->frac_digits;
-	myathdp->elconv_a->p_cs_precedes = syslconv->p_cs_precedes;
-	myathdp->elconv_a->p_sep_by_space = syslconv->p_sep_by_space;
-	myathdp->elconv_a->n_cs_precedes = syslconv->n_cs_precedes;
-	myathdp->elconv_a->n_sep_by_space = syslconv->n_sep_by_space;
-	myathdp->elconv_a->p_sign_posn = syslconv->p_sign_posn;
-	myathdp->elconv_a->n_sign_posn = syslconv->n_sign_posn;
+	atp->elconv_a->int_frac_digits = syslconv->int_frac_digits;
+	atp->elconv_a->frac_digits = syslconv->frac_digits;
+	atp->elconv_a->p_cs_precedes = syslconv->p_cs_precedes;
+	atp->elconv_a->p_sep_by_space = syslconv->p_sep_by_space;
+	atp->elconv_a->n_cs_precedes = syslconv->n_cs_precedes;
+	atp->elconv_a->n_sep_by_space = syslconv->n_sep_by_space;
+	atp->elconv_a->p_sign_posn = syslconv->p_sign_posn;
+	atp->elconv_a->n_sign_posn = syslconv->n_sign_posn;
 
 	/* convert lconv ebcidic info to ascii and store in the local  */
-	/* copy of the lconv in myathdp                                */
-	__toascii_a((char *)myathdp->elconv_a->decimal_point,
+	/* copy of the lconv in atp                                */
+	__toascii_a((char *)atp->elconv_a->decimal_point,
 				(char *)syslconv->decimal_point);
-	__toascii_a((char *)myathdp->elconv_a->thousands_sep,
+	__toascii_a((char *)atp->elconv_a->thousands_sep,
 				(char *)syslconv->thousands_sep);
-	__toascii_a((char *)myathdp->elconv_a->grouping,
+	__toascii_a((char *)atp->elconv_a->grouping,
 				(char *)syslconv->grouping);
-	__toascii_a((char *)myathdp->elconv_a->int_curr_symbol,
+	__toascii_a((char *)atp->elconv_a->int_curr_symbol,
 				(char *)syslconv->int_curr_symbol);
-	__toascii_a((char *)myathdp->elconv_a->currency_symbol,
+	__toascii_a((char *)atp->elconv_a->currency_symbol,
 				(char *)syslconv->currency_symbol);
-	__toascii_a((char *)myathdp->elconv_a->mon_decimal_point,
+	__toascii_a((char *)atp->elconv_a->mon_decimal_point,
 				(char *)syslconv->mon_decimal_point);
-	__toascii_a((char *)myathdp->elconv_a->mon_thousands_sep,
+	__toascii_a((char *)atp->elconv_a->mon_thousands_sep,
 				(char *)syslconv->mon_thousands_sep);
-	__toascii_a((char *)myathdp->elconv_a->mon_grouping, 
+	__toascii_a((char *)atp->elconv_a->mon_grouping, 
 				(char *)syslconv->mon_grouping);  
-	__toascii_a((char *)myathdp->elconv_a->positive_sign,
+	__toascii_a((char *)atp->elconv_a->positive_sign,
 				(char *)syslconv->positive_sign);
-	__toascii_a((char *)myathdp->elconv_a->negative_sign,
+	__toascii_a((char *)atp->elconv_a->negative_sign,
 				(char *)syslconv->negative_sign);
-	__toascii_a((char *)myathdp->elconv_a->left_parenthesis,
+	__toascii_a((char *)atp->elconv_a->left_parenthesis,
 				(char *)syslconv->left_parenthesis);
-	__toascii_a((char *)myathdp->elconv_a->right_parenthesis,
+	__toascii_a((char *)atp->elconv_a->right_parenthesis,
 				(char *)syslconv->right_parenthesis);
-	__toascii_a((char *)myathdp->elconv_a->debit_sign,
+	__toascii_a((char *)atp->elconv_a->debit_sign,
 				(char *)syslconv->debit_sign);    
-	__toascii_a((char *)myathdp->elconv_a->credit_sign, 
+	__toascii_a((char *)atp->elconv_a->credit_sign, 
 				(char *)syslconv->credit_sign);   
 
-	return myathdp->elconv_a;
+	return atp->elconv_a;
 }
 
 /*%PAGE																*/
@@ -160,18 +165,39 @@ __setlocale_a(int category, const char *locale)
 {
 	char	*locale_e;
 	char	*c;
-	ATHD_t	*myathdp;
+	ATHD_t	*atp;
 
-	myathdp = athdp();
+    /*
+     * We will keep a cache of locales in ASCII
+     */
+	atp = athdp();
+    if (atp->locale == NULL) {
+        atp->locale = malloc(sizeof(locCache));
+        if (atp->locale == NULL) {
+            perror("malloc");
+            abort();
+        }
+        memset(locCache, 0, sizeof(locCache));
+    }
+
 	if (locale) {
 		c = setlocale(category, __getEstring1_a(locale));
 	} else
 		c = setlocale(category, NULL);
 	if (c) {
-		__toascii_a(myathdp->estring1_a,c);
-        locale_e = myathdp->estring1_a;
+        /*
+         * Check if an entry exists and that it's the same size
+         */
+        if (locCache[category + 1] == NULL)
+            locale_e = locCache[category + 1] = strdup(c);
+        else if (strlen(locCache[category + 1]) > strlen(c)) {
+            free(locCache[category + 1]);
+            locale_e = locCache[category + 1] = strdup(c);
+        }
+        __toascii_a(locale_e, c);
     } else
         locale_e = NULL;
+
 	return locale_e;
 }
 /*%PAGE                                                             */

@@ -8,6 +8,7 @@
 #include <unistd.h>
 #include <iconv.h>
 #include <locale.h>
+#include <wchar.h>
 #include <sys/stat.h>
 #include <sys/modes.h>
 #include "_Ascii_a.h"
@@ -77,6 +78,28 @@ struct FDXL {
 typedef struct FDXL fdxl_t;
 
 /**
+ * @brief Wide and multibyte support
+ */
+typedef enum {
+    ENCODING_AUTO_DETECT = 0,
+    ENCODING_UTF8,
+    ENCODING_UTF16_BE,
+    ENCODING_UTF16_LE,
+    ENCODING_UTF32_BE,
+    ENCODING_UTF32_LE,
+    ENCODING_ASCII_EXTENDED
+} unicodeEncoding_t;
+
+/**
+ * @brief Preserves internal state across restartable calls.
+ */
+typedef struct {
+    wchar_t pendingLowSurrogate;        // Stores low surrogate for 2-pass wchar_t extraction
+    wchar_t pendingHighSurrogate;       // Stores high surrogate for 2-pass wchar_t encoding
+    unicodeEncoding_t resolvedEncoding; // Holds auto-detected encoding mode
+} mbstate_a_t;
+
+/**
  * @brief Structure ATHD defines the thread specific data used by ASCII library.
  */
 struct ATHD {
@@ -86,6 +109,8 @@ struct ATHD {
 	pthread_t    threadid;     /* thread id                           */
 	iconv_t      cd_EtoA;      /* EBCDIC to ASCII iconv descriptor    */
 	iconv_t      cd_AtoE;      /* ASCII to EBCDIC iconv descriptor    */
+    mbstate_a_t  mb;           /* mb<->wc conversions                 */
+    void         *locale;      /* Table of locale settings            */
 
 	char         *epathname;   /* ebcdic path name                    */
 	char         *astring1_a;  /* ascii string returned by __getAstring1_a */
@@ -285,7 +310,6 @@ mkNew(const char **str)
         __toebcdic_a((char *) newStr[count], (char *) newStr[count]);
     }
     newStr[count] = NULL;
-
     return newStr;
 }
 
