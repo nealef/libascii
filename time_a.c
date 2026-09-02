@@ -251,25 +251,14 @@ __gettimeofday_a(struct timeval *tp, struct timezone *tzp)
 int 
 __futimes(int fd, const struct timeval tv[2])
 {
-    FILE *stream;
-    fldata_t fileInfo;
-    char fileName[FILENAME_MAX];
-    int rc = -1, f;
+    char *path;
+    int rc = -1;
 
-    memset(fileName, 0, sizeof(fileName));
-    if ((f = dup(fd)) != -1) {
-        stream = fdopen(f, "r");
-        if (stream != NULL) {
-            if (fldata(stream, fileName, &fileInfo) == 0) {
-                if (fileName[0] != 0) {
-                    rc = utimes(fileName, tv);
-                } else {
-                    errno = EBADF;
-                }
-            }
-            fclose(stream);
-        }
-        close(f);
+    path = __getPathname(fd);
+    if (path) {
+        rc = utimes(path, tv);
+    } else {
+        errno = EBADF;
     }
     return rc;
 }

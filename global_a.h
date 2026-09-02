@@ -73,6 +73,7 @@ struct FDXL {
     int  fd;                /* File descriptor */
     int  ascii;             /* Translation required flag */
     int  textbin;           /* Text/Binary mode */
+    char *path;             /* Pathname (if applicable) */
 };
 
 typedef struct FDXL fdxl_t;
@@ -165,7 +166,28 @@ __isAsciiFD(int fd)
             return (fdxl->ascii);
     }
 
-    return __insertFD(fd, NULL);
+    return __insertFD(fd, NULL, 0);
+}
+
+/**
+ * @brief Get the pathname of the assocated FD
+ *
+ * @param fd File descriptor
+ * @returns pathname or NULL
+ */
+static inline char *
+__getPathname(int fd)
+{
+	ATHD_t *myathdp = athdp();
+    fdxl_t *fdxl;
+    struct stat st;
+
+    for (fdxl = myathdp->fdxl; fdxl != NULL; fdxl = fdxl->next) {
+        if (fd == fdxl->fd)
+            return (fdxl->path);
+    }
+
+    return NULL;
 }
 
 /**
@@ -193,7 +215,7 @@ __setAsciiFD(int fd, int trans)
  * @param fd File Descriptor
  */
 static inline int
-__insertFD(int fd, char *path)
+__insertFD(int fd, char *path, int new)
 {
 	ATHD_t *myathdp = athdp();
     fdxl_t *fdxl = myathdp->fdxl,
@@ -204,7 +226,7 @@ __insertFD(int fd, char *path)
 
     if (fstat(fd, &info) == 0) {
         if (S_ISREG(info.st_mode)) {
-            if (path != NULL) {
+            if (new) {
                 tag = 1;
                 chaudit(path, iso8859, AUDT_USER);
             } else {
@@ -231,6 +253,10 @@ __insertFD(int fd, char *path)
         fdxl->next = NULL;
         fdxl->fd = fd;
         fdxl->ascii = tag;
+        if (path)
+            fdxl->path = strdup(path);
+        else
+            fdxl->path = NULL;
         myathdp->fdxl = fdxl;
     } else {
         /*
@@ -239,6 +265,10 @@ __insertFD(int fd, char *path)
         for (fdxl = myathdp->fdxl; fdxl != NULL; fdxl = fdxl->next) {
             if (fdxl->fd == fd) {
                 fdxl->ascii = tag;
+                if (path)
+                    fdxl->path = strdup(path);
+                else
+                    fdxl->path = NULL;
                 return tag;
             }
             last = fdxl;
@@ -248,6 +278,10 @@ __insertFD(int fd, char *path)
         fdxl->fd = fd;
         fdxl->ascii = tag;
         last->next = fdxl;
+        if (path)
+            fdxl->path = strdup(path);
+        else
+            fdxl->path = NULL;
     }
     return tag;
 }
@@ -269,6 +303,8 @@ __deleteFD(int fd)
 
     if (fdxl->fd == fd) {           /* Only entry */
         myathdp->fdxl = fdxl->next;
+        if (fdxl->path)
+            free(fdxl->path);
         free(fdxl);
         return;
     }
@@ -276,6 +312,8 @@ __deleteFD(int fd)
     for (fdxl = myathdp->fdxl; fdxl != NULL; fdxl = fdxl->next) {
         if (fdxl->fd == fd) {
             last->next = fdxl->next;
+            if (fdxl->path)
+                free(fdxl->path);
             free(fdxl);
             return;
         }

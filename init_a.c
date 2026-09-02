@@ -63,7 +63,7 @@ getathdp()
  *
  */
 static void 
-handler(int sig, siginfo_t *si, void *unused)
+handler(int sig)
 {
     fprintf(stderr, "Signal Handler Invoked\n");
     ctrace("Signal");
@@ -148,9 +148,9 @@ __initASCIIlib_a()
 	atp->initdone = 1;
 
     /* Prepare FD translate entries for stdin/out/err */
-    (void)__insertFD(fileno(stdin), NULL);
-    (void)__insertFD(fileno(stdout), NULL);
-    (void)__insertFD(fileno(stderr), NULL);
+    (void)__insertFD(fileno(stdin), NULL, 0);
+    (void)__insertFD(fileno(stdout), NULL, 0);
+    (void)__insertFD(fileno(stderr), NULL, 0);
 
     /* Prepare the environment variable handling */
     atp->envtbl = malloc(sizeof(hashTable_t));
@@ -161,7 +161,7 @@ __initASCIIlib_a()
 
     memset(&sa, 0, sizeof(sa));
 
-    sa.sa_sigaction = handler;
+    sa.sa_handler = handler;
     if (sigaction(SIGSEGV, &sa, NULL) == -1)
         perror("sigaction");
     if (sigaction(SIGFPE, &sa, NULL) == -1)

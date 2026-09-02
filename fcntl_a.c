@@ -47,7 +47,7 @@ __creat_a(const char* path, mode_t mode)
 
 	fd = creat(ePath, mode);
     if (fd != -1) 
-        (void) __insertFD(fd, ePath);
+        (void) __insertFD(fd, ePath, 1);
 
     return fd;
 }
@@ -73,12 +73,12 @@ __open_a(const char *path, int oflag, ...)
 		tmpmode = va_arg(ap, mode_t);
 		fd = open((const char *) ePath, oflag, tmpmode);
         if (fd != -1)
-            (void) __insertFD(fd, ePath);
+            (void) __insertFD(fd, ePath, 1);
 		va_end(ap);
 	} else {
 		fd = open((const char *) ePath, oflag);
         if (fd != -1)
-            (void) __insertFD(fd, NULL);
+            (void) __insertFD(fd, ePath, 0);
     }
 
 	return(fd);

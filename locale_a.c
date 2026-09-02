@@ -188,11 +188,13 @@ __setlocale_a(int category, const char *locale)
         /*
          * Check if an entry exists and that it's the same size
          */
-        if (locCache[category + 1] == NULL)
+        if (locCache[category + 1] == NULL) {
             locale_e = locCache[category + 1] = strdup(c);
-        else if (strlen(locCache[category + 1]) > strlen(c)) {
+        } else if (strlen(locCache[category + 1]) > strlen(c)) {
             free(locCache[category + 1]);
             locale_e = locCache[category + 1] = strdup(c);
+        } else {
+            locale_e = locCache[category + 1];
         }
         __toascii_a(locale_e, c);
     } else

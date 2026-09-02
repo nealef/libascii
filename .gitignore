@@ -3,3 +3,8 @@
 *.dbg
 *.so
 *.x
+tests/*.o
+tests/*.lst
+tests/*.dbg
+tests/mbwctests
+tests/mbwctests_a

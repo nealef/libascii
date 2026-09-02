@@ -166,14 +166,14 @@ __fopen_a(const char *path, const char *mode)
     FILE *fp;
     struct stat info;
     const char *ePath = __getEstring1_a(path);
-    char *new = NULL;
+    int new = 0;
 
     if (stat(ePath, &info) == -1)
-        new = (char *) ePath;
+        new = 1;
 
 	fp = fopen(ePath, (const char *) __getEstring2_a(mode));
     if (fp != NULL)
-        (void)__insertFD(fileno(fp), new);
+        (void)__insertFD(fileno(fp), ePath, new);
 
     return fp;
 
@@ -239,12 +239,13 @@ FILE *
 __freopen_a( const char *path, const char *mode, FILE *stream)
 {
     FILE *fp;
+    char *ePath = __getEstring1_a(path);
 
-	fp = freopen((char const *) __getEstring1_a(path),
+	fp = freopen((char const *) ePath,
 	             (char const *) __getEstring2_a(mode),
 				   stream);
     if (fp != NULL)
-        (void)__insertFD(fileno(fp), NULL);
+        (void)__insertFD(fileno(fp), ePath, 0);
 
     return fp;
 }

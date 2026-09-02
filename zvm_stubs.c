@@ -486,6 +486,7 @@ __select_ovr(int max, fd_set *r, fd_set *w, fd_set *x, struct timeval *t)
         nmax = 0,
         found = 0,
         res;
+    static struct timeval zeroTime = { .tv_sec = 0, .tv_usec = 1 };
     fd_set *rr = (r != NULL ? __alloca(sizeof(fd_set)) : NULL),
            *ww = (w != NULL ? __alloca(sizeof(fd_set)) : NULL),
            *xx = (x != NULL ? __alloca(sizeof(fd_set)) : NULL);
@@ -523,6 +524,18 @@ __select_ovr(int max, fd_set *r, fd_set *w, fd_set *x, struct timeval *t)
                 FD_SET(fd, xx);
         }
     }
+
+    if (max == 0) {
+        if ((t == NULL) ||
+            ((t->tv_sec == 0) && (t->tv_usec == 0)))
+            return 0;
+    }
+
+    /**
+     * There is a bug in OpenExtensions where a zero timeout waits forever
+     */
+    if ((t != NULL) && (t->tv_sec == 0) && (t->tv_usec == 0))
+        t = &zeroTime;
 
     /**
      * If no FIFOs were found then just run the select as is
