@@ -22,24 +22,6 @@
 
 #define MAXSTRING_a 2048      /* Increase for large printf, sprintf, etc. */
 
-#define DUMP_DATA(t, d, l) do {                         \
-       int x,y;		                                    \
-       char *c = (char *) (d);		                    \
-       fprintf(stderr, "%s - %p.%x\n", t, c, (l));	    \
-       for (x = 0; x < (l);) {		                    \
-           fprintf(stderr, "%04x ", x);                 \
-           for (y = 0; y < 16 & x < (l); x++, y++)		\
-               fprintf(stderr, "%02x ",c[x]);		    \
-           fputc('\n', stderr);                         \
-       }		                                        \
-   } while (0)
-
-#define DEBUG_PRINT(fmt, ...) do {                      \
-        fprintf(stderr, "%s:%d - " fmt"\n",             \
-                __func__, __LINE__, __VA_ARGS__);       \
-        fflush(stderr);                                 \
-    } while (0)
-
 /**
  * We use the audit field of the stat structure to determine
  * the type of translation required. This applies to IS_REG()
@@ -108,10 +90,12 @@ struct ATHD {
 	int          initdone;     /* athd data area  initialization complete   */
 	pid_t        pid;          /* process id                          */
 	pthread_t    threadid;     /* thread id                           */
+    clock_t      lastVirt;     /* Last virtual CPU from diag 0x0c     */
 	iconv_t      cd_EtoA;      /* EBCDIC to ASCII iconv descriptor    */
 	iconv_t      cd_AtoE;      /* ASCII to EBCDIC iconv descriptor    */
     mbstate_a_t  mb;           /* mb<->wc conversions                 */
     void         *locale;      /* Table of locale settings            */
+    FILE         *debug;       /* Debug file                          */
 
 	char         *epathname;   /* ebcdic path name                    */
 	char         *astring1_a;  /* ascii string returned by __getAstring1_a */
@@ -137,234 +121,42 @@ struct ATHD {
 typedef struct ATHD ATHD_t;
 
 /**
- * @brief Determine if a file requires translation
- *
- * @param stream File stream
- * @returns 0 if no translation is required, 1 otherwise
+ * @brief DIAGNOSE 0x0c returned structure
  */
-static inline int
-__isAsciiStream(FILE *stream)
-{
-	return __isAsciiFD(fileno(stream));
-}
+typedef struct {
+    char     date[8];
+    char     time[8];
+    uint64_t virtCPU;
+    uint64_t totalCPU;
+} virtClock_t __attribute__ ((aligned (8)));
+
+/*
+ * Debug MACROs
+ */
+#ifdef __LIBASCII_DEBUG
+void __dump__data(char *, void *, size_t);
+void __debug_print(const char *, int, char *, ...);
+# define DUMP_DATA(t, d, l) __dump_data(t, d, l)
+
+# define DEBUG_PRINT(fmt, ...) __debug_print(__func__, __LINE__, fmt, __VA_ARGS__)
+
+#else
+# define DUMP_DATA(t, d, l)
+# define DEBUG_PRINT(fmt, ...) 
+#endif
 
 /**
- * @brief Determine if a file requires translation
- *
- * @param fd File descriptor
- * @returns 0 if no translation is required, 1 otherwise
+ * @brief Utility routine prototypes
  */
-static inline int
-__isAsciiFD(int fd)
-{
-	ATHD_t *myathdp = athdp();
-    fdxl_t *fdxl;
-    struct stat st;
+int __isAsciiStream(FILE *);
+int __isAsciiFD(int);
+char * __getPathname(int);
+void __setAsciiFD(int, int);
+int __insertFD(int, char *, int);
+void __deleteFD(int);
+void __updateFD(int, int);
+const char ** mkNew(const char **);
+void freeNew(const char **);
 
-    for (fdxl = myathdp->fdxl; fdxl != NULL; fdxl = fdxl->next) {
-        if (fd == fdxl->fd)
-            return (fdxl->ascii);
-    }
 
-    return __insertFD(fd, NULL, 0);
-}
-
-/**
- * @brief Get the pathname of the assocated FD
- *
- * @param fd File descriptor
- * @returns pathname or NULL
- */
-static inline char *
-__getPathname(int fd)
-{
-	ATHD_t *myathdp = athdp();
-    fdxl_t *fdxl;
-    struct stat st;
-
-    for (fdxl = myathdp->fdxl; fdxl != NULL; fdxl = fdxl->next) {
-        if (fd == fdxl->fd)
-            return (fdxl->path);
-    }
-
-    return NULL;
-}
-
-/**
- * @brief Indicate that a file requires translation
- *
- * @param fd File descriptor
- * @param fd Data needs to be translated on read/write
- */
-static inline void
-__setAsciiFD(int fd, int trans)
-{
-	ATHD_t *myathdp = athdp();
-    fdxl_t *fdxl;
-    struct stat st;
-
-    for (fdxl = myathdp->fdxl; fdxl != NULL; fdxl = fdxl->next) {
-        if (fd == fdxl->fd)
-            fdxl->ascii = trans;
-    }
-}
-
-/**
- * @brief Insert fd into the fdxl linked list
- *
- * @param fd File Descriptor
- */
-static inline int
-__insertFD(int fd, char *path, int new)
-{
-	ATHD_t *myathdp = athdp();
-    fdxl_t *fdxl = myathdp->fdxl,
-           *last = NULL;
-    struct stat info;
-    int tag = 0,
-        mode = 1;
-
-    if (fstat(fd, &info) == 0) {
-        if (S_ISREG(info.st_mode)) {
-            if (new) {
-                tag = 1;
-                chaudit(path, iso8859, AUDT_USER);
-            } else {
-                if ((info.st_useraudit == iso8859) || 
-                    (info.st_useraudit == mixAsc) ||
-                    (info.st_useraudit == binary))
-                    tag = 1;
-                else
-                    tag = 0;
-            }
-        } else {
-            if (S_ISSOCK(info.st_mode))
-                tag = 1;
-            else 
-                tag = 0;
-        }
-    }
-
-    /*
-     * If this is the first
-     */
-    if (fdxl == NULL) {
-        fdxl = malloc(sizeof(fdxl_t));
-        fdxl->next = NULL;
-        fdxl->fd = fd;
-        fdxl->ascii = tag;
-        if (path)
-            fdxl->path = strdup(path);
-        else
-            fdxl->path = NULL;
-        myathdp->fdxl = fdxl;
-    } else {
-        /*
-         * Find a spot to plug us in
-         */
-        for (fdxl = myathdp->fdxl; fdxl != NULL; fdxl = fdxl->next) {
-            if (fdxl->fd == fd) {
-                fdxl->ascii = tag;
-                if (path)
-                    fdxl->path = strdup(path);
-                else
-                    fdxl->path = NULL;
-                return tag;
-            }
-            last = fdxl;
-        }
-        fdxl = malloc(sizeof(fdxl_t));
-        fdxl->next = NULL;
-        fdxl->fd = fd;
-        fdxl->ascii = tag;
-        last->next = fdxl;
-        if (path)
-            fdxl->path = strdup(path);
-        else
-            fdxl->path = NULL;
-    }
-    return tag;
-}
-
-/**
- * @brief Delete fd from the fdxl linked list
- *
- * @param fd File Descriptor
- */
-static inline void
-__deleteFD(int fd)
-{
-	ATHD_t *myathdp = athdp();
-    fdxl_t *fdxl = myathdp->fdxl,
-           *last = NULL;
-
-    if (fdxl == NULL)               /* No entries */
-        return;
-
-    if (fdxl->fd == fd) {           /* Only entry */
-        myathdp->fdxl = fdxl->next;
-        if (fdxl->path)
-            free(fdxl->path);
-        free(fdxl);
-        return;
-    }
-
-    for (fdxl = myathdp->fdxl; fdxl != NULL; fdxl = fdxl->next) {
-        if (fdxl->fd == fd) {
-            last->next = fdxl->next;
-            if (fdxl->path)
-                free(fdxl->path);
-            free(fdxl);
-            return;
-        }
-        last = fdxl;
-    }
-}
-
-/**
- * @brief Construct new argv or envp strings
- */
-
-static inline const char **
-mkNew(const char **str)
-{
-    const char **newStr = NULL;
-    int count;
-    
-    /*
-     * Count the strings
-     */
-    for (count = 0; str[count] != NULL; count++);
-
-    count++;    /* Add a spot for the NULL terminator */
-
-    newStr = malloc(count * sizeof(uintptr_t));
-
-    /*
-     * Copy and translate the strings
-     */
-    for (count = 0; str[count] != NULL; count++) {
-        newStr[count] = strdup(str[count]);
-        __toebcdic_a((char *) newStr[count], (char *) newStr[count]);
-    }
-    newStr[count] = NULL;
-    return newStr;
-}
-
-/**
- * @brief Free argv or envp strings
- */
-static inline void
-freeNew(const char **str)
-{
-    int i;
-
-    /*
-     * Free the strings
-     */
-    for (i = 0; str[i] != NULL; i++)
-        free((void *)str[i]);
-    
-    free(str);      /* Free the array */
-}
 

@@ -30,6 +30,8 @@
 #pragma export(__close_a)
 #pragma export(__confstr_a)
 #pragma export(__ctermid_a)
+#pragma export(__dup_a)
+#pragma export(__dup2_a)
 #pragma export(__execl_a)
 #pragma export(__execv_a)
 #pragma export(__execve_a)
@@ -513,4 +515,40 @@ __close_a(int fd)
     res = close(fd);
     __deleteFD(fd);
     return res;
+}
+
+/**
+ * @brief Intercept the dup() API so we can update internal table
+ *
+ * @param fd Current fd
+ * @returns New file descriptor
+ */
+int
+__dup_a(int fd)
+{
+    int newFD = dup(fd);
+
+    if (newFD != -1)
+        __insertFD(fd, newFD, 1);
+
+    return newFD;
+}
+
+/**
+ * @brief Intercept the dup2() API so we can update internal table
+ *
+ * @param fd1 New fd
+ * @param fd2 Original fd
+ * @returns New file descriptor
+ */
+int
+__dup2_a(int fd1, int fd2)
+{
+    int newFD;
+
+    newFD = dup2(fd1, fd2);
+    if (newFD != -1)
+        __updateFD(newFD, fd1);
+
+    return newFD;
 }

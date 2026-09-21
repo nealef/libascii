@@ -250,9 +250,9 @@ __putenv_a(const char *envvar)
 
     var_name = __alloca(strlen(envvar)+1);
     __toebcdic_a(var_name, envvar);
-    if (strchr(var_name, '=')) {
-        var_name  = strtok(var_name, "=");
-        new_value = strtok(NULL, "=");
+    if (new_value = strchr(var_name, '=')) {
+        *new_value = 0;
+        new_value++;
     } else {
         new_value = NULL;
     }

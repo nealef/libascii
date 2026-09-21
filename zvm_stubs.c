@@ -32,6 +32,7 @@
 #include "global_a.h"
 
 #pragma export(__ae_autoconvert_state_a)
+#pragma export(__clock_ovr)
 #pragma export(__closelog)
 #pragma export(__crypt_a)
 #pragma export(__endgrent)
@@ -61,6 +62,7 @@
 #pragma export(modfl)
 
 #pragma map(__ae_autoconvert_state_a, "__ae_autoconvert_state")
+#pragma map(__clock_ovr, "CLCKOVRA")
 #pragma map(__closelog, "closelog")
 #pragma map(__crypt_a, "\174\174A00367")
 #pragma map(__endgrent, "endgrent")
@@ -459,11 +461,11 @@ nanosleep(const struct timespec *req, struct timespec *rem)
     int32_t usec, sec;
     int rc;
 
-    endUsecs = req->tv_nsec * 1000 + req->tv_sec * 1000000;
-    gettimeofday(&end, NULL);
-    endUsecs += end.tv_sec * 1000000 + end.tv_usec;
+    endUsecs = req->tv_nsec / 1000 + req->tv_sec * 1000000;
     timeout.tv_sec = endUsecs / 1000000;
     timeout.tv_usec = endUsecs % 1000000;
+    gettimeofday(&end, NULL);
+    endUsecs += end.tv_sec * 1000000 + end.tv_usec;
     rc = select(0, NULL, NULL, NULL, &timeout);
     while ((rc == -1) && (errno = EINTR)) {
         gettimeofday(&now, NULL);
@@ -627,4 +629,27 @@ modfl(long double x, long double *iptr)
     }
     
     return fractional_part;
+}
+
+/**
+ * @brief Implement clock() for IEEE FP
+ */
+clock_t
+__clock_ovr()
+{
+    clock_t res;
+    static double clocks_per_sec = 1000000 / CLOCKS_PER_SEC;
+
+    if (__isVM()) {
+	    ATHD_t *atp = athdp();
+        virtClock_t vc;
+
+        asm ("\tLA\t1,%0\n"
+             "\tDC\tXL4'8310000C'\n"
+             : "=m" (vc) : : "cc", "1");
+        res = (clock_t) ((vc.virtCPU - atp->lastVirt) / clocks_per_sec);
+    } else {
+        res = clock();
+    }
+    return res;
 }

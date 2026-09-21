@@ -12,6 +12,7 @@
 #include <time.h>
 #include <sys/time.h>
 #include <sys/resource.h>
+#include <sys/utsname.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <errno.h>
@@ -28,6 +29,10 @@
 #pragma export(__write_ovr)
 #pragma export(nanosleep)
 #pragma export(__isVM)
+#pragma export(__clock_ovr)
+#pragma export(__uname_ovr)
+#pragma export(__dup_a)
+#pragma export(__dup2_a)
 
 #pragma map(select_ovr, "SLCTOVRA")
 #pragma map(__fgetc_ovr, "FGETOVRA")
@@ -39,6 +44,11 @@
 #pragma map(__read_ovr, "READOVRA")
 #pragma map(__truncate_ovr, "TRUNCOVRA")
 #pragma map(__write_ovr, "WRITOVRA")
+#pragma map(__clock_ovr, "CLCKOVRA")
+#pragma map(__uname_ovr, "UNAMEOVR")
+
+int __uname_ovra(struct utsname *);
+#pragma map(__uname_ovra, "@@A00296")
 
 int 
 __fgetc_ovr(FILE *stream)
@@ -128,8 +138,47 @@ nanosleep(const struct timespec *req, struct timespec *rem)
     return rc;
 }
 
+/**
+ * @brief Tell caller we are not running under z/VM
+ */
 int
 __isVM()
 {
     return 0;
+}
+
+/**
+ * @brief Return clock() value
+ */
+clock_t
+__clock_ovr()
+{ 
+    return (clock());
+}
+
+/**
+ * @brief Get Current Operating SYstem Name
+ */
+int
+__uname_ovr(struct utsname *name)
+{ 
+    return (__uname_ovra(name));
+}
+
+/**
+ * @brief Perform dup
+ */
+int
+__dup_a(int fd)
+{ 
+    return dup(fd);
+}
+
+/**
+ * @brief Perform dup2
+ */
+int
+__dup2_a(int fd1, int fd2)
+{ 
+    return dup2(fd1, fd2);
 }

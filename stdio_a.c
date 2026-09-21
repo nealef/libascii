@@ -121,6 +121,7 @@ __fdopen_a(int fildes, const char *options)
 char *
 __fgets_a(char *string, int n, FILE *stream)
 {
+#if 0
 	if (stream==stdin) {  /* assume the input is ebcdic */
 		if (fgets(string, n, stream) != NULL) {
 			__toascii_a(string, string);
@@ -128,6 +129,8 @@ __fgets_a(char *string, int n, FILE *stream)
 		} else
 			return(NULL);
 	} else if (!__isAsciiStream(stream)) {
+#endif
+	if (!__isAsciiStream(stream)) {
         if (fgets(string, n, stream) != NULL) {
             __toascii_a(string, string);
             return(string);
@@ -188,6 +191,7 @@ int
 __fputc_a(int c, FILE *stream)
 {
 	char input_char[] = " ";      /* 2 bytes work area : ' '+'\0' */
+
 	input_char[0] = c;
     if (!__isAsciiStream(stream)) 
 		__toebcdic_a(input_char, input_char);
@@ -257,6 +261,7 @@ size_t
 __fwrite_a(const void *buffer, size_t size, size_t count, FILE *stream)
 {
 	size_t	bytes;
+
 	if (!__isAsciiStream(stream)) {
         char *out = __alloca(size * count);
 		__toebcdiclen_a((char *) out, (char *) buffer, size * count);
@@ -358,7 +363,6 @@ __ungetc_a(int c, FILE *stream)
 int 
 __getopt_a(int argc, char *argv[], const char *varname)
 {
-	ATHD_t *myathdp;
 	char tmpvarname[80];
 	char *tmpvarnamep;
 	int varlen=80;
@@ -454,12 +458,13 @@ __putc_a(int c, FILE *stream)
 /**
  * @brief Put a character to a file
  *
- * Assume EBCDIC output if stdout or stderr
+ * Assume EBCDIC output if stdout
  */
 int 
 __putchar_a(int c)
 {
 	char input_char[]=" ";      /* 2 bytes work area : ' '+'\0' */
+
 	input_char[0]=c;
 	__toebcdic_a(input_char, input_char);
 	return (fputc(input_char[0], stdout));
@@ -467,6 +472,8 @@ __putchar_a(int c)
  
 /**
  * @brief Put a string to stdout
+ *
+ * Assume EBCDIC output if stdout
  */
 int  
 __puts_a(char *buffer)
