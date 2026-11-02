@@ -67,7 +67,12 @@ static void
 handler(int sig)
 {
     fprintf(stderr, "Signal Handler Invoked - signal: %d\n", sig);
-    ctrace("Signal");
+    switch (sig) {
+        case SIGTERM :
+            break;
+        default :
+            ctrace("Signal");
+    }
     _exit(1);
 }
 

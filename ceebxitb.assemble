@@ -1,0 +1,493 @@
+CEEBXITB TITLE 'CEL Assembler User Exit under CMS'                      00001000
+***************************************************************         00002000
+*                     Module Function Box                     *         00003000
+*                     -------------------                     *         00004000
+*                                                             *         00005000
+* Module ID  - CEEBXITB.                                      *         00006000
+*                                                             *         00007000
+* Function   - Language Environment User Exit.                *         00008000
+*                                                             *         00009000
+* Function codes -                                            *         00010000
+*    1 - First enclave initialization                         *         00011000
+*    2 - First enclave termination                            *         00012000
+*    3 - Nested enclave initialization                        *         00013000
+*    4 - Nested enclave termination                           *         00014000
+*    5 - Process Termination                                  *         00015000
+*                                                             *         00016000
+* Register Usage:                                             *         00017000
+*  Input                                                      *         00018000
+*    R1  - A(A(Assembler User Exit Plist cntrl blk)) - CEEAUE *         00019000
+*          NOTE: CEEAUE  contains the address of a 256 Byte   *         00020000
+*                work area initialized to zero which is used  *         00021000
+*                as the CEEBXITA's Save Area                  *         00022000
+*    R15 - Entry Point Address                                *         00023000
+*    R14 - Return Address                                     *         00024000
+*    R12 - Pointer to CAA                                     *         00025000
+* Output                                                      *         00026000
+*    CEEAUE  altered                                          *         00027000
+* Work Regs                                                   *         00028000
+*    R3 - Code Base                                           *         00029000
+*    R5 - Base for User Exit Control Block (CEEAUE)           *         00030000
+*                                                             *         00031000
+* Called by  - Language Environment.                          *         00032000
+*                                                             *         00033000
+* Calling to - None.                                          *         00034000
+*                                                             *         00035000
+* Notes      - (1) .......................................... *         00036000
+*                                                             *         00037000
+*              (2) .......................................... *         00038000
+*                                                             *         00039000
+* Name       - Neale Ferguson.                                *         00040000
+*                                                             *         00041000
+* Date       - June, 2026.                                    *         00042000
+*                                                             *         00043000
+* Associated    - (1) z/VM: 7.4 Language Environment User's   *         00044000
+* Documentation       Guide                                   *         00045000
+*                                                             *         00046000
+*                                                             *         00047000
+***************************************************************         00048000
+  SPACE 1                                                               00049000
+***************************************************************         00050000
+*   COPYRIGHT -                                               *         00051000
+*     LICENSED MATERIALS - PROPERTY OF IBM                    *         00052000
+*     5741-A05  COPYRIGHT IBM CORP.  1992, 2008               *         00053000
+*     ALL RIGHTS RESERVED.                                    *         00054000
+*     US GOVERNMENT USERS RESTRICTED RIGHTS -                 *         00055000
+*     USE, DUPLICATION OR DISCLOSURE                          *         00056000
+*     RESTRICTED BY GSA ADP SCHEDULE CONTRACT WITH            *         00057000
+*     IBM CORPORATION.                                        *         00058000
+***************************************************************         00059000
+  SPACE 1                                                               00060000
+  TITLE 'CEL Assembler User Exit under CMS - Equates'                   00061000
+***************************************************************         00062000
+*                          Equates                            *         00063000
+*                          -------                            *         00064000
+***************************************************************         00065000
+         SPACE 1                                                        00066000
+CEEBXITA START                                                          00067000
+CEEBXITA AMODE 31                                                       00068000
+CEEBXITA RMODE ANY                                                      00069000
+         PRINT ON,NOGEN                                                 00070000
+         SPACE 1                                                        00071000
+R0       EQU   0                                                        00072000
+R1       EQU   1                                                        00073000
+R2       EQU   2                                                        00074000
+R3       EQU   3                                                        00075000
+R4       EQU   4                                                        00076000
+R5       EQU   5                                                        00077000
+R6       EQU   6                                                        00078000
+R7       EQU   7                                                        00079000
+R8       EQU   8                                                        00080000
+R9       EQU   9                                                        00081000
+R10      EQU   10                                                       00082000
+R11      EQU   11                                                       00083000
+R12      EQU   12                                                       00084000
+R13      EQU   13                                                       00085000
+R14      EQU   14                                                       00086000
+R15      EQU   15                                                       00087000
+         SPACE 1                                                        00088000
+C0       EQU   0                                                        00089000
+         SPACE 1                                                        00090000
+S390M    EQU   X'0008'            Running in s/390 compatability mode   00091000
+IEEECTL  EQU   X'04'              Enable IEEE Floating Point            00092000
+         SPACE 1                                                        00093000
+FRST_INIT_CODE  EQU 1             First enclave initialization code     00094000
+FRST_TERM_CODE  EQU 2             First enclave termination code        00095000
+NSTD_INIT_CODE  EQU 3             Nested enclave initialization code    00096000
+NSTD_TERM_CODE  EQU 4             Nested enclave initialization code    00097000
+PROC_TERM_CODE  EQU 5             Process termination code              00098000
+         SPACE 1                                                        00099000
+*================= End of Equates ===========================*          00100000
+  TITLE 'CEL Assembler User Exit under CMS - MACROS'                    00101000
+**************************************************************          00102000
+*                   M a c r o s                              *          00103000
+**************************************************************          00104000
+        SPACE 1                                                         00105000
+        MACRO                                                           00106000
+&LABEL  NULL  ,                                                         00107000
+&LABEL  DS    0H                                                        00108000
+        MEND                                                            00109000
+        SPACE 1                                                         00110000
+*===================== End of Macros ========================*          00111000
+  TITLE 'CEL Assembler User Exit under CMS - Library DSECTs'            00112000
+  PRINT OFF,NOGEN                                                       00113000
+  IHAPSA ,                                                              00114000
+  PRINT ON,NOGEN                                                        00115000
+*                                                                       00116000
+* DSECTs included but not printed                                       00117000
+*                                                                       00118000
+* IHAPSA ,                                                              00119000
+  SPACE 1                                                               00120000
+*================= End of Library DSECTs ====================*          00121000
+  TITLE 'CEL Assembler User Exit under CMS - Parameter List DSECT'      00122000
+**************************************************************          00123000
+*            LE Anchor Control Block                         *          00124000
+**************************************************************          00125000
+                     SPACE 1                                            00126000
+CEEAUE               DSECT                                              00127000
+CEEAUE_LEN           DS  F        Len of user exit Ctl Blk              00128000
+CEEAUE_FUNC          DS  F        Function Code                         00129000
+*                                 1 ==> Initialization Exit             00130000
+*                                 2 ==> Termination Exit                00131000
+*                                 3 ==> Init Exit for nested enclave    00132000
+*                                 4 ==> Term Exit for nested enclave    00133000
+*                                 5 ==> Process termination Exit        00134000
+CEEAUE_RETC          DS  F        Return or ABEND code                  00135000
+CEEAUE_RSNC          DS  F        Return or ABEND Reason Code           00136000
+*                                                                       00137000
+CEEAUE_FLAGS         DS  0F       Flags                                 00138000
+CEEAUE_FLAG1         DS  X                                              00139000
+CEEAUE_ABTERM        EQU X'80'    0 = Normal termination                00140000
+*                                 1 = Abnormal termination              00141000
+CEEAUE_ABND          EQU X'40'    0 = terminate pgm with Return/Reason  00142000
+*                                 1 = terminate pgm with ABEND/Reason   00143000
+CEEAUE_DUMP          EQU X'20'    0 = If CXIT_ABND is 1, ABEND without  00144000
+*                                     a dump                            00145000
+*                                 1 = IF CXIT_ABND is 1, ABEND  w/ dump 00146000
+CEEAUE_STEPS         EQU X'10'    0 = IF CXIT_ABND is 1, ABEND the      00147000
+*                                     entire OS task                    00148000
+*                                 1 = If CXIT_ABND is 1, ABEND the JOB  00149000
+*                                     step                              00150000
+                     SPACE 1                                            00151000
+CEEAUE_FLAG2         DS  X        Reserved                              00152000
+CEEAUE_FLAG3         DS  X        Reserved                              00153000
+CEEAUE_FLAG4         DS  X        Reserved                              00154000
+                     SPACE 1                                            00155000
+CEEAUE_A_CC_PLIST    DS  A        Ptr to Reg 1 upon invocation          00156000
+*                                 ...Initialization Exit Only           00157000
+CEEAUE_A_WORK        DS  A        Ptr to 256-byte work area             00158000
+CEEAUE_A_OPTIONS     DS  A        A(A(Run-Time Options string))         00159000
+CEEAUE_USERWD        DS  F        User word. Retained thru Termination  00160000
+CEEAUE_A_AB_CODES    DS  A        Ptr to list of abend codes that       00161000
+*                                 CEL  error handler shouldn't trap.    00162000
+*                                  format of table is:                  00163000
+*                                    fullword: # of entries             00164000
+*                                    fullword: error code               00165000
+*                                    fullword: error code               00166000
+*                                      ...                              00167000
+*                                  Use X'00sss000' for system abends    00168000
+*                                      F'uuu'      for user abends      00169000
+CEEAUE_FBCODE        DS  A        Feedback code                         00170000
+CEEAUE_PAGE          DS  F        Minimum value for page allocations    00171000
+                     SPACE 1                                            00172000
+*============== End of Parameter List DSECT =================*          00173000
+  TITLE 'CEL Assembler User Exit under CMS - Mainline'                  00174000
+**************************************************************          00175000
+*                  M A I N L I N E                           *          00176000
+**************************************************************          00177000
+  SPACE 1                                                               00178000
+CEEBXITA CSECT                                                          00179000
+  SPACE 1                                                               00180000
+  USING CEEBXITA,R3        Code Base                                    00181000
+  USING CEEAUE,R5          User Exit Control Block                      00182000
+* ---------------                                                       00183000
+  SPACE 1                                                               00184000
+  STM   14,12,12(13)       Save Registers in caller's S.A.              00185000
+  LR    R3,R15             Set Module Base                              00186000
+  J     AROUND                                                          00187000
+  SPACE 1                                                               00188000
+  DC    CL8'CEEBXITA'      Eye-catcher for Debugging                    00189000
+*                                                                       00190000
+&DATE    SETC  '&SYSDATC'                                               00191000
+&HH      SETC  '&SYSTIME'(1,2)                                          00192000
+&MIN     SETC  '&SYSTIME'(4,2)                                          00193000
+&SEC     SETC  '00'                                                     00194000
+&VER     SETC  '01'                                                     00195000
+&REL     SETC  '09'                                                     00196000
+&MOD     SETC  '00'                                                     00197000
+  DC    CL8'&DATE'                                                      00198000
+  DC    CL2'&HH'                                                        00199000
+  DC    CL2'&MIN'                                                       00200000
+  DC    CL2'&SEC'                                                       00201000
+  DC    CL2'&VER'                                                       00202000
+  DC    CL2'&REL'                                                       00203000
+  DC    CL2'&MOD'                                                       00204000
+  SPACE 1                                                               00205000
+AROUND   NULL                                                           00206000
+  L     R5,0(,R1)          Get the parm passed                          00207000
+  L     R10,CEEAUE_A_WORK  Obtain the workarea                          00208000
+  ST    R10,8(,R13)        Chain save areas                             00209000
+  ST    R13,4(,R10)        ....                                         00210000
+  LR    R13,R10            R13 points to new SaveArea                   00211000
+  SPACE 1                                                               00212000
+  L    R4,CEEAUE_FUNC      Get the function code.                       00213000
+  IF (CHI,R4,GE,FRST_INIT_CODE),AND,(CHI,R4,LE,PROC_TERM_CODE)          00214000
+* ------------------------------------------------------------          00215000
+     CASENTRY R4,VECTOR=BR                                              00216000
+*    ---------------------                                              00217000
+         CASE 1              FRST_INIT_CODE                             00218000
+*        ------                                                         00219000
+            BRAS R10,FRST_INIT_EXIT                                     00220000
+            SPACE 1                                                     00221000
+         CASE 2              FRST_TERM_CODE                             00222000
+*        ------                                                         00223000
+            BRAS R10,FRST_TERM_EXIT                                     00224000
+            SPACE 1                                                     00225000
+         CASE 3              NSTD_INIT_CODE                             00226000
+*        ------                                                         00227000
+            BRAS R10,NSTD_INIT_EXIT                                     00228000
+            SPACE 1                                                     00229000
+         CASE 4              NSTD_TERM_CODE                             00230000
+*        ------                                                         00231000
+            BRAS R10,NSTD_TERM_EXIT                                     00232000
+            SPACE 1                                                     00233000
+         CASE 5              PROC_TERM_CODE                             00234000
+*        ------                                                         00235000
+            BRAS R10,PROC_TERM_EXIT                                     00236000
+            SPACE 1                                                     00237000
+     ENDCASE                                                            00238000
+*    -------                                                            00239000
+  ENDIF                                                                 00240000
+* -----                                                                 00241000
+  L     R13,4(,R13)        Get A(caller's save area)                    00242000
+  LM    R14,R12,12(R13)    Restore caller's regs                        00243000
+  BR    R14                Go home                                      00244000
+*================== End of Mainline =========================*          00245000
+  TITLE 'CEL Assembler User Exit under CMS - First Enclave Init'        00246000
+**************************************************************          00247000
+*      First enclave initialization exit.                    *          00248000
+**************************************************************          00249000
+  SPACE 1                                                               00250000
+  USING PSA,R0                                                          00251000
+* ------------                                                          00252000
+FRST_INIT_EXIT NULL                                                     00253000
+*                                                                       00254000
+*  To activate the abend codes table, uncomment the next 2 lines        00255000
+*                                                                       00256000
+*        LA    R4,ABEND_CODES     Get addr(abend codes table)           00257000
+*        ST    R4,CEEAUE_A_AB_CODES Store it in slot                    00258000
+*                                                                       00259000
+*  To override run time options, uncomment the next 2 lines             00260000
+*  and change the string at label OPTION_OVER                           00261000
+*        LA   R4,OPTION_OVER         Get addr(options override)         00262000
+*        ST   R4,CEEAUE_A_OPTIONS    Store in slot                      00263000
+*                                                                       00264000
+  LA    R1,SYSOUT          Issue 'FILEDEF SYSOUT TERM'                  00265000
+  CMSCALL ,ERROR=*                                                      00266000
+  SPACE 1                                                               00267000
+  LA    R1,SYSIN           Issue 'FILEDEF SYSIN TERM'                   00268000
+  CMSCALL ,ERROR=*                                                      00269000
+  SPACE 1                                                               00270000
+  LA    R1,CEEDUMP         Issue 'FILEDEF CEEDUMP PRT'                  00271000
+  CMSCALL ,ERROR=*                                                      00272000
+  SPACE 1                                                               00273000
+  LA    R1,SYSABEND        Issue 'FILEDEF SYSABEND PRT'                 00274000
+  CMSCALL ,ERROR=*                                                      00275000
+  SPACE 1                                                               00276000
+  LA    R1,SYSUDUMP        Issue 'FILEDEF SYSUDUMP PRT'                 00277000
+  CMSCALL ,ERROR=*                                                      00278000
+  SPACE 1                                                               00279000
+*                                                                       00280000
+* LE inspects a field at 0x21c which, under z/OS, is the PSATOLD field  00281000
+* CMS uses this location for a different purpose (part of SYSTEMID) and 00282000
+* so we may crash if LE uses the field. Therefore we override the value 00283000
+* for as long as this process is active and restore it at termination.  00284000
+*                                                                       00285000
+  IF (LT,R4,PSATOLD,NZ)    If PSATOLD is not zero                       00286000
+* ---------------------                                                 00287000
+     IPK                       Save PSW Key                             00288000
+     SPKA   0                  Set to nucleus key                       00289000
+     MVC    SAVTOLD,PSATOLD    Save PSATOLD field                       00290000
+     XC     PSATOLD,PSATOLD    Clear PSATOLD field                      00291000
+     SPKA   0(R2)              Reset PSW Key                            00292000
+  ENDIF                                                                 00293000
+* -----                                                                 00294000
+*                                                                       00295000
+* In z/VM 7.5 IEEE floating point will be enabled but until then we     00296000
+* will enable it here                                                   00297000
+*                                                                       00298000
+  EPSW R0,0        Extract PSW                                          00299000
+  IF (TMLH,R0,S390M,NO) If we are in zArchitecture mode                 00300000
+* ---------------------                                                 00301000
+     STCTG C0,C0,CTL0     Save CR0                                      00302000
+     OI    CTL0+5,IEEECTL Turn on the IEEEFP bit                        00303000
+     LCTLG C0,C0,CTL0     Reload                                        00304000
+  ELSE                                                                  00305000
+* ----                                                                  00306000
+     STCTL C0,C0,CTL0     Save CR0                                      00307000
+     OI    CTL0+1,IEEECTL Turn on the IEEEFP bit                        00308000
+     LCTL  C0,C0,CTL0     Reload                                        00309000
+  ENDIF                                                                 00310000
+* -----                                                                 00311000
+  SPACE 1                                                               00312000
+  BR    R10                                                             00313000
+  SPACE 1                                                               00314000
+  DROP  R0                                                              00315000
+* --------                                                              00316000
+*============== End of First Enclave Iniatialization ========*          00317000
+  TITLE 'CEL Assembler User Exit under CMS - First Enclave Termination' 00318000
+**************************************************************          00319000
+*      First enclave termination exit.                       *          00320000
+**************************************************************          00321000
+  SPACE 1                                                               00322000
+FRST_TERM_EXIT NULL                                                     00323000
+  IF (TM,CEEAUE_FLAG1,CEEAUE_ABTERM,O) If abnormal termination          00324000
+* ------------------------------------                                  00325000
+*    OI    CEEAUE_FLAG1,CEEAUE_ABND                                     00326000
+*    OI    CEEAUE_FLAG1,CEEAUE_ABND+CEEAUE_DUMP                         00327000
+  ENDIF                                                                 00328000
+* -----                                                                 00329000
+  BR    R10                                                             00330000
+  SPACE 1                                                               00331000
+*============== End of First Enclave Termination ============*          00332000
+  TITLE 'CEL Assembler User Exit under CMS - Nested Enclave Init'       00333000
+**************************************************************          00334000
+*      Nested Enclave Initialization Exit                    *          00335000
+**************************************************************          00336000
+  SPACE 1                                                               00337000
+NSTD_INIT_EXIT NULL                                                     00338000
+  BR    R10                                                             00339000
+  SPACE 1                                                               00340000
+*============ End of Nested Enclave Initialization ==========*          00341000
+  TITLE 'CEL Assembler User Exit under CMS - Nested Enclave Term'       00342000
+**************************************************************          00343000
+*      Nested Enclave Termination Exit                       *          00344000
+**************************************************************          00345000
+  SPACE 1                                                               00346000
+NSTD_TERM_EXIT NULL                                                     00347000
+  BR    R10                                                             00348000
+  SPACE 1                                                               00349000
+*============= End of Nested Enclave Termination ============*          00350000
+  TITLE 'CEL Assembler User Exit under CMS - Process Termination'       00351000
+**************************************************************          00352000
+*      Process Termination Exit                              *          00353000
+**************************************************************          00354000
+  SPACE 1                                                               00355000
+  USING PSA,R0                                                          00356000
+* ------------                                                          00357000
+PROC_TERM_EXIT NULL                                                     00358000
+  SPACE 1                                                               00359000
+  LA    R1,FI_C_SYO        FILEDEF CLEAR SYSOUT                         00360000
+  CMSCALL ,ERROR=*                                                      00361000
+  SPACE 1                                                               00362000
+  LA    R1,FI_C_SYI        FILEDEF CLEAR SYSIN                          00363000
+  CMSCALL ,ERROR=*                                                      00364000
+  SPACE 1                                                               00365000
+  LA    R1,FI_C_CDP        FILEDEF CLEAR CEEDUMP                        00366000
+  CMSCALL ,ERROR=*                                                      00367000
+  SPACE 1                                                               00368000
+  LA    R1,FI_C_SYA        FILEDEF CLEAR SYSABEND                       00369000
+  CMSCALL ,ERROR=*                                                      00370000
+  SPACE 1                                                               00371000
+  LA    R1,FI_C_SYU        FILEDEF CLEAR SYSUDUMP                       00372000
+  CMSCALL ,ERROR=*                                                      00373000
+  SPACE 1                                                               00374000
+  IF (LT,R5,SAVTOLD,NZ),AND,(LT,R4,PSATOLD,Z) If PSATOLD overridden     00375000
+* -------------------------------------------                           00376000
+     IPK                       Save PSW Key                             00377000
+     SPKA   0                  Set to nucleus key                       00378000
+     ST     R5,PSATOLD         Reset PSATOLD field                      00379000
+     XC     SAVTOLD,SAVTOLD    Clear saved value                        00380000
+     SPKA   0(R2)              Reset PSW Key                            00381000
+  ENDIF                                                                 00382000
+* -----                                                                 00383000
+  BR    R10                                                             00384000
+  SPACE 1                                                               00385000
+  DROP  R0                                                              00386000
+* --------                                                              00387000
+*================ End of Process Termination ================*          00388000
+  TITLE 'CEL Assembler User Exit under CMS - CONSTANTS'                 00389000
+**************************************************************          00390000
+*                C o n s t a n t s                           *          00391000
+**************************************************************          00392000
+  SPACE 1                                                               00393000
+* The first field in the following table is a count                     00394000
+* of how many abend codes are not to be trapped by                      00395000
+* the CEL error handler.                                                00396000
+*                                                                       00397000
+* If you want the CEL error handler NOT to trap:                        00398000
+*   - a system sss abend, enter X'00sss000' into the table              00399000
+*   - a user uuu abend,   enter F'uuu' into the table                   00400000
+*                                                                       00401000
+ABEND_CODES DS 0H                                                       00402000
+  DC  A(((ABEND_CODES_END-ABEND_CODES)/4)-1)                            00403000
+*                                                                       00404000
+*                                                                       00405000
+* DC  F'uuu'             CEL won't trap user uuu abends                 00406000
+* DC  X'00sss000'        CEL won't trap system sss abends               00407000
+*                                                                       00408000
+ABEND_CODES_END DS 0H                                                   00409000
+  SPACE 1                                                               00410000
+*                                                                       00411000
+*    Sample run time options override. NOTE the beginning or            00412000
+*    ending slash is not required.                                      00413000
+*                                                                       00414000
+OPTION_OVER   DC    A(OPTION_STRING)                                    00415000
+OPTION_STRING DC    AL2(OPTION_END-OPTION_BEGIN)                        00416000
+OPTION_BEGIN  DC    C'RPTSTG(ON),'                                      00417000
+              DC    C'TRACE(ON,4K,DUMP,LE=3)'                           00418000
+OPTION_END    EQU   *                                                   00419000
+              SPACE 1                                                   00420000
+*                                                                       00421000
+* FILEDEFs for CMS                                                      00422000
+*                                                                       00423000
+           DS    0D               Force Dword alignment                 00424000
+SYSOUT     DC    CL8'FILEDEF'                                           00425000
+           DC    CL8'SYSOUT'                                            00426000
+           DC    CL8'TERMINAL'                                          00427000
+           DC    CL8'('                                                 00428000
+           DC    CL8'NOCHANGE'                                          00429000
+           DC    CL8'RECFM'                                             00430000
+           DC    CL8'F'                                                 00431000
+           DC    CL8'LRECL'                                             00432000
+           DC    CL8'121'                                               00433000
+           DC    8X'FF'                                                 00434000
+           SPACE 1                                                      00435000
+SYSIN      DC    CL8'FILEDEF'                                           00436000
+           DC    CL8'SYSIN'                                             00437000
+           DC    CL8'TERMINAL'                                          00438000
+           DC    CL8'('                                                 00439000
+           DC    CL8'NOCHANGE'                                          00440000
+           DC    8X'FF'                                                 00441000
+           SPACE 1                                                      00442000
+CEEDUMP    DC    CL8'FILEDEF'                                           00443000
+           DC    CL8'CEEDUMP'                                           00444000
+           DC    CL8'PRINTER'                                           00445000
+           DC    CL8'('                                                 00446000
+           DC    CL8'NOCHANGE'                                          00447000
+           DC    8X'FF'                                                 00448000
+           SPACE 1                                                      00449000
+SYSABEND   DC    CL8'FILEDEF'                                           00450000
+           DC    CL8'SYSABEND'                                          00451000
+           DC    CL8'PRINTER'                                           00452000
+           DC    CL8'('                                                 00453000
+           DC    CL8'NOCHANGE'                                          00454000
+           DC    8X'FF'                                                 00455000
+           SPACE 1                                                      00456000
+SYSUDUMP   DC    CL8'FILEDEF'                                           00457000
+           DC    CL8'SYSUDUMP'                                          00458000
+           DC    CL8'PRINTER'                                           00459000
+           DC    CL8'('                                                 00460000
+           DC    CL8'NOCHANGE'                                          00461000
+           DC    8X'FF'                                                 00462000
+           SPACE 1                                                      00463000
+FI_C_SYO   DC    CL8'FILEDEF'                                           00464000
+           DC    CL8'SYSOUT'                                            00465000
+           DC    CL8'CLEAR'                                             00466000
+           DC    8X'FF'                                                 00467000
+           SPACE 1                                                      00468000
+FI_C_SYI   DC    CL8'FILEDEF'                                           00469000
+           DC    CL8'SYSIN'                                             00470000
+           DC    CL8'CLEAR'                                             00471000
+           DC    8X'FF'                                                 00472000
+           SPACE 1                                                      00473000
+FI_C_CDP   DC    CL8'FILEDEF'                                           00474000
+           DC    CL8'CEEDUMP'                                           00475000
+           DC    CL8'CLEAR'                                             00476000
+           DC    8X'FF'                                                 00477000
+           SPACE 1                                                      00478000
+FI_C_SYA   DC    CL8'FILEDEF'                                           00479000
+           DC    CL8'SYSABEND'                                          00480000
+           DC    CL8'CLEAR'                                             00481000
+           DC    8X'FF'                                                 00482000
+           SPACE 1                                                      00483000
+FI_C_SYU   DC    CL8'FILEDEF'                                           00484000
+           DC    CL8'SYSUDUMP'                                          00485000
+           DC    CL8'CLEAR'                                             00486000
+           DC    8X'FF'                                                 00487000
+           SPACE 1                                                      00488000
+CTL0       DC    D'0'             Control Register 0                    00489000
+SAVTOLD    DC    F'0'             Save value of PSATOLD field           00490000
+           SPACE 1                                                      00491000
+*======================= End of Constants ==================*           00492000
+           END                                                          00493000

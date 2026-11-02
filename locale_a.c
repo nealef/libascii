@@ -56,7 +56,9 @@ typedef struct elconv elconv_t ;
 /** 
  * Locale cache
  */
-char *locCache[LC_SYNTAX + 2];
+char **locCache = NULL;
+
+#define LOCCACHE_SZ ((LC_SYNTAX + 2) * sizeof(uintptr_t))
 
 /*%PAGE																*/
 /**
@@ -172,12 +174,12 @@ __setlocale_a(int category, const char *locale)
      */
 	atp = athdp();
     if (atp->locale == NULL) {
-        atp->locale = malloc(sizeof(locCache));
+        atp->locale = locCache = malloc(LOCCACHE_SZ);
         if (atp->locale == NULL) {
             perror("malloc");
             abort();
         }
-        memset(locCache, 0, sizeof(locCache));
+        memset(locCache, 0, LOCCACHE_SZ);
     }
 
 	if (locale) {
@@ -190,13 +192,14 @@ __setlocale_a(int category, const char *locale)
          */
         if (locCache[category + 1] == NULL) {
             locale_e = locCache[category + 1] = strdup(c);
+            __toascii_a(locale_e, c);
         } else if (strlen(locCache[category + 1]) > strlen(c)) {
             free(locCache[category + 1]);
             locale_e = locCache[category + 1] = strdup(c);
+            __toascii_a(locale_e, c);
         } else {
             locale_e = locCache[category + 1];
         }
-        __toascii_a(locale_e, c);
     } else
         locale_e = NULL;
 

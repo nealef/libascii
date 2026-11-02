@@ -16,6 +16,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <errno.h>
+#include <wchar.h>
 
 #pragma export(select_ovr)
 #pragma export(__fgetc_ovr)
@@ -33,6 +34,8 @@
 #pragma export(__uname_ovr)
 #pragma export(__dup_a)
 #pragma export(__dup2_a)
+#pragma export(__wcsstr_ovr)
+#pragma export(__mb_cur_max_a)
 
 #pragma map(select_ovr, "SLCTOVRA")
 #pragma map(__fgetc_ovr, "FGETOVRA")
@@ -46,9 +49,11 @@
 #pragma map(__write_ovr, "WRITOVRA")
 #pragma map(__clock_ovr, "CLCKOVRA")
 #pragma map(__uname_ovr, "UNAMEOVR")
+#pragma map(__wcsstr_ovr, "WCSSTROV")
+#pragma map(__uname_ovra, "@@A00296")
+#pragma map(__mb_cur_max_a, "MBCURMXA")
 
 int __uname_ovra(struct utsname *);
-#pragma map(__uname_ovra, "@@A00296")
 
 int 
 __fgetc_ovr(FILE *stream)
@@ -181,4 +186,24 @@ int
 __dup2_a(int fd1, int fd2)
 { 
     return dup2(fd1, fd2);
+}
+
+/**
+ * @brief Perform wcsstr
+ */
+wchar_t *
+__wcsstr_ovr(const wchar_t *haystack, const wchar_t *needle)
+{ 
+    return wcsstr(haystack, needle);
+}
+
+/**
+ * @brief Return max no of bytes needed to represent a wide character in current locale
+ *
+ * @returns Maximum number of bytes
+ */
+int
+__mb_cur_max_a(void)
+{
+    return MB_CUR_MAX;
 }

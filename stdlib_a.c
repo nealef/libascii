@@ -68,6 +68,7 @@
 #pragma export(__wcsrtombs_a)
 #pragma export(__wcstombs_a)
 #pragma export(__wctomb_a)
+#pragma export(__mb_cur_max_a)
 
 #pragma map(__Envna_a, "\174\174ENVNA") 
 #pragma map(__a64l_a, "\174\174A00172")
@@ -103,6 +104,7 @@
 #pragma map(__wcsrtombs_a, "WCSRTOMBS")
 #pragma map(__wcstombs_a, "\174\174A00013")
 #pragma map(__wctomb_a, "\174\174A00023")
+#pragma map(__mb_cur_max_a, "MBCURMXA")
 
 /*%PAGE																*/
 /**
@@ -880,4 +882,15 @@ __wcstombs_a(char *dst, const wchar_t *src, size_t len)
     const wchar_t *srcPtr = src;
     mbstate_a_t localState = {0, 0};
     return __wcsrtombs_a(dst, &srcPtr, len, (mbstate_t *)&localState);
+}
+
+/**
+ * @brief Return max no of bytes needed to represent a wide character in current locale
+ *
+ * @returns Maximum number of bytes
+ */
+int
+__mb_cur_max_a(void)
+{
+    return MB_CUR_MAX;
 }

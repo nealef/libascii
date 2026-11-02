@@ -20,21 +20,25 @@
 
 #pragma export(__wcscoll_a)
 #pragma export(__wcsftime_a)
-#pragma export(__wcsstr_a)
+#pragma export(__wcsstr_ovr)
 #pragma export(__wcstod_a)
 #pragma export(__wcstol_a)
 #pragma export(__wcstoul_a)
 #pragma export(__wcsxfrm_a)
 #pragma export(__wcwidth_a)
+#pragma export(__towlower_a)
+#pragma export(__towupper_a)
 
 #pragma map(__wcscoll_a,  "\174\174A00057")
 #pragma map(__wcsftime_a, "\174\174A00111")
-#pragma map(__wcsstr_a    "WCSSTR")
+#pragma map(__wcsstr_ovr, "WCSSTROV")
 #pragma map(__wcstod_a,   "\174\174A00373")
 #pragma map(__wcstol_a,   "\174\174A00374")
 #pragma map(__wcstoul_a,  "\174\174A00375")
 #pragma map(__wcsxfrm_a,  "\174\174A00060")
 #pragma map(__wcwidth_a,  "\174\174A00027")
+#pragma map(__towlower_a, "\174\174A00070")
+#pragma map(__towupper_a, "\174\174A00072")
 
 /*%PAGE																*/
 
@@ -116,7 +120,7 @@ __wcsftime_a(wchar_t *wcs, size_t maxsize, const wchar_t *format,
  * @brief Finds the first occurrence of needle in haystack.
  */
 wchar_t *
-__wcsstr_a(const wchar_t *haystack, const wchar_t *needle)
+__wcsstr_ovr(const wchar_t *haystack, const wchar_t *needle)
 {
     if (haystack == NULL || needle == NULL) 
         return NULL;
@@ -250,4 +254,65 @@ __wcsxfrm_a(wchar_t *wcs1, const wchar_t *wcs2, size_t n)
     if ((wcs1 != NULL) && (l > 0))
         __towascii_a(wcs1, wcs1);
     return l;
+}
+
+/**
+ * @brief Convert to upper case
+ */
+
+typedef struct {
+    wchar_t range_start;
+    wchar_t range_end;
+    int offset;
+} casemap_t;
+
+// Example mappings for ASCII, Latin Extended, and Cyrillic
+static const casemap_t upperMap [] = {
+    { L'a',    L'z',    -32   },
+    { 0x00E0,  0x00F6,  -32   }, // Latin-1
+    { 0x00F8,  0x00FE,  -32   },
+    { 0x0101,  0x0177,   -1   }, // Even/Odd pair blocks in Latin Extended-A
+    { 0x0391,  0x03a9,  -32   }, // Greek 
+    { 0x03c2,  0x03c2,  -49   }, // Greek - capital sigma
+    { 0x0430,  0x044F,  -32   }, // Cyrillic small a-ya
+    { 0x0530,  0x058f,  -32   }, // Armenian
+    { 0x1c90,  0x1cbf,  -4128 }, // Georgian
+};
+
+static const casemap_t lowerMap [] = {
+    { L'A',    L'Z',    32   },
+    { 0x00C0,  0x00D6,  32   }, // Latin-1
+    { 0x00D8,  0x00DE,  32   },
+    { 0x03b1,  0x03c9,  32   }, // Greek 
+    { 0x03c2,  0x03c2,  49   }, // Greek - final sigma 
+    { 0x0410,  0x042F,  32   }, // Cyrillic capital A-YA
+    { 0x0561,  0x0586,  32   }, // Armenian
+};
+
+wchar_t
+__towlower_a(wchar_t wc) {
+    size_t count = sizeof(lowerMap) / sizeof(lowerMap[0]);
+
+    for (size_t i = 0; i < count; i++) {
+        if (wc >= lowerMap[i].range_start && wc <= lowerMap[i].range_end) {
+            return wc + lowerMap[i].offset;
+        }
+    }
+    return wc;
+}
+
+wchar_t 
+__towupper_a(wchar_t wc) {
+    size_t count = sizeof(upperMap) / sizeof(upperMap[0]);
+
+    for (size_t i = 0; i < count; i++) {
+        if (wc >= upperMap[i].range_start && wc <= upperMap[i].range_end) {
+            // For alternating pairs where lower is odd (e.g. 0x0101 -> 0x0100)
+            if (upperMap[i].offset == -1 && (wc % 2 == 0)) {
+                continue; 
+            }
+            return wc + upperMap[i].offset;
+        }
+    }
+    return wc;
 }

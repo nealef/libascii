@@ -22,7 +22,9 @@
 #include <stdlib.h>
 #include <stdarg.h>
 #include <stdio.h>
+#include <string.h>
 #include <limits.h>
+#include <errno.h>
 #include <sys/statvfs.h>
 #include "global_a.h"
  
